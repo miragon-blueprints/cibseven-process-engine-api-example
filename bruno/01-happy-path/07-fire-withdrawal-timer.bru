@@ -1,0 +1,15 @@
+meta {
+  name: Fire the withdrawal-period timer
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{engineRest}}/job/{{withdrawalJobId}}/execute
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}

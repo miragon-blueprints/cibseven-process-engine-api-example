@@ -1,0 +1,26 @@
+meta {
+  name: Find the clarify-return task (in the cancel sub-process)
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{engineRest}}/task?processInstanceBusinessKey={{applicationId}}&taskDefinitionKey=userTask_clarifyReturn
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Compensation (event sub-process -> call activity -> requestCancellation) runs asynchronously
+  // before the cancelBikeOrder sub-process parks on the clarify-return task.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].id: isDefined
+}
+
+vars:post-response {
+  clarifyReturnTaskId: res.body[0].id
+}

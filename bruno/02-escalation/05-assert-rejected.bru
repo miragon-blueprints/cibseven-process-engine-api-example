@@ -1,0 +1,21 @@
+meta {
+  name: Assert the application was rejected
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Let the rejection's async continuation settle before reading the status.
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: eq REJECTED
+}

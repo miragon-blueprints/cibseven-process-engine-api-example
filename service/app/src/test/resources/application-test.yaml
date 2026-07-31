@@ -1,0 +1,54 @@
+spring:
+  main:
+    web-application-type: none
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    # The engine-rest (Jersey) API needs a servlet web context, which the process
+    # tests don't start (web-application-type: none). It is only needed at runtime.
+    exclude:
+      - org.cibseven.bpm.spring.boot.starter.rest.CamundaBpmRestJerseyAutoConfiguration
+  datasource:
+    url: jdbc:h2:mem:bikeleasing-test;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+# process-engine-api (bpm-crafters): the cib-seven-embedded adapter polls external service tasks and
+# user tasks fast (every second) so the @ProcessEngineWorker beans and the UserTaskSupport pool
+# advance the process promptly in tests. Model deployment stays with CIB seven, so the worker
+# library's own deployment is disabled.
+dev:
+  bpm-crafters:
+    process-api:
+      worker:
+        deployment:
+          enabled: false
+      adapter:
+        cib-seven-embedded:
+          enabled: true
+          service-tasks:
+            delivery-strategy: embedded_scheduled
+            worker-id: leasing-worker
+            schedule-delivery-fixed-rate-in-seconds: 1
+          user-tasks:
+            delivery-strategy: embedded_scheduled
+            schedule-delivery-fixed-rate-in-seconds: 1
+
+camunda:
+  bpm:
+    admin-user:
+      id: admin
+      password: admin
+    database:
+      type: h2
+      schema-update: true
+    job-execution:
+      enabled: false
+    webapp:
+      enabled: false

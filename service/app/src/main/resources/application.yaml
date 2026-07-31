@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bikeleasing
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+# process-engine-api (bpm-crafters): runs the cib-seven-embedded adapter, which polls external
+# service tasks / user tasks on a schedule and hands them to the @ProcessEngineWorker beans and the
+# UserTaskSupport subscription pool. Model deployment stays with CIB seven (see camunda.bpm below,
+# which also deploys the .form files), so the worker library's own deployment is disabled.
+dev:
+  bpm-crafters:
+    process-api:
+      worker:
+        deployment:
+          enabled: false
+      adapter:
+        cib-seven-embedded:
+          enabled: true
+          service-tasks:
+            delivery-strategy: embedded_scheduled
+            worker-id: leasing-worker
+            schedule-delivery-fixed-rate-in-seconds: 1
+          user-tasks:
+            delivery-strategy: embedded_scheduled
+            schedule-delivery-fixed-rate-in-seconds: 1
+
+camunda:
+  bpm:
+    admin-user:
+      id: admin
+      password: admin
+    # Deploy BPMN, DMN and Camunda Forms from the classpath so the .form files resolve in the Tasklist.
+    deployment-resource-pattern:
+      - classpath*:**/*.bpmn
+      - classpath*:**/*.dmn
+      - classpath*:**/*.form
+    webapp:
+      application-path: /camunda
+    database:
+      type: postgres
+      schema-update: true
+    # Poll async-continuation jobs quickly so the process advances promptly between wait states.
+    job-execution:
+      wait-time-in-millis: 250
+      max-wait: 1000
+
+cibseven:
+  webclient:
+    authentication:
+      # WARNING: This is a development/example secret key.
+      # DO NOT use this in production! Generate your own secure secret key.
+      jwtSecret: RtURHZ7SQYfLoX902wcjlvduW2qe9g0bjMUczmffjiTjzU9phbv3mK54zHMqeGK6cqgoEBTIUE6RqwvemSqbpD40qUPXVRElvDHGhn4OAEfjeEP2ANah8GJejSA08E820mForcQHBmediqg2DzIrxnDXyf2

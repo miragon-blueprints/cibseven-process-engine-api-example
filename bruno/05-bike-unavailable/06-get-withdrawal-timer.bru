@@ -1,0 +1,25 @@
+meta {
+  name: Find the withdrawal-period timer
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{engineRest}}/job?processInstanceId={{processInstanceId}}&activityId=event_withdrawalPeriodElapsed&timers=true
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the handover message's async continuation to reach the withdrawal-period timer.
+  await new Promise((resolve) => setTimeout(resolve, 2500));
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].id: isDefined
+}
+
+vars:post-response {
+  withdrawalJobId: res.body[0].id
+}
