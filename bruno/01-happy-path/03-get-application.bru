@@ -1,0 +1,19 @@
+meta {
+  name: Get the leasing application (domain view)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.applicationId: eq {{applicationId}}
+  res.body.status: eq RECEIVED
+  res.body.bikeId: eq BIKE-900
+  res.body.bikeModel: eq Gravel Explorer 900
+}

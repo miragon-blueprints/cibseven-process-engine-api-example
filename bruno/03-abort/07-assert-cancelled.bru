@@ -1,0 +1,21 @@
+meta {
+  name: Assert the application was cancelled
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{engineRest}}/history/activity-instance?processInstanceId={{processInstanceId}}&activityId=endEvent_applicationCancelled
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Completing the task drives the remaining compensation + confirmation asynchronously to the end.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+
+assert {
+  res.status: eq 200
+  res.body: length 1
+}

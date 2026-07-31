@@ -1,0 +1,31 @@
+meta {
+  name: Submit an insolvent leasing request
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "customerName": "Dan Underage",
+    "email": "dan@example.com",
+    "age": 15,
+    "monthlyNetIncome": 3500.0,
+    "bikeId": "BIKE-800",
+    "bikeModel": "Carbon Road 800"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.applicationId: isDefined
+}
+
+vars:post-response {
+  applicationId: res.body.applicationId
+}

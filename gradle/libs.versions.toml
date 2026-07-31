@@ -1,0 +1,82 @@
+[versions]
+spring_version = "4.1.0"
+spring_dependency_version = "1.1.7"
+kotlin_version = "2.4.0"
+kotlin_logging_version = "3.0.5"
+cib7_version = "2.2.0"
+process_engine_api_version = "1.7"
+process_engine_worker_version = "0.8.4"
+process_engine_adapter_cib7_version = "2026.07.1"
+bpmn_to_code_version = "3.1.0"
+bpmn_to_code_testing_version = "5.1.0"
+archunit_version = "1.4.2"
+konsist_version = "0.17.3"
+cib7_jgiven_version = "2.1.0"
+jgiven_kotlin_version = "2.0.2.1"
+
+[libraries]
+web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
+devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring_version" }
+jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring_version" }
+postgres = { module = "org.postgresql:postgresql", version = "42.7.12" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
+kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
+
+# CIB seven (Camunda 7 fork) — Spring Boot 4 starters
+cib7-webapp = { module = "org.cibseven.bpm.springboot:cibseven-bpm-spring-boot-starter-webapp-4", version.ref = "cib7_version" }
+cib7-rest = { module = "org.cibseven.bpm.springboot:cibseven-bpm-spring-boot-starter-rest-4", version.ref = "cib7_version" }
+
+# process-engine-api (bpm-crafters) — the abstraction layer used to talk to the engine
+# (start/correlate/complete via APIs, and @ProcessEngineWorker beans for the service tasks)
+process-engine-api = { module = "dev.bpm-crafters.process-engine-api:process-engine-api", version.ref = "process_engine_api_version" }
+process-engine-worker = { module = "dev.bpm-crafters.process-engine-worker:process-engine-worker-spring-boot-starter", version.ref = "process_engine_worker_version" }
+process-engine-adapter-cib7-embedded = { module = "dev.bpm-crafters.process-engine-adapters:process-engine-adapter-cib-seven-embedded-spring-boot-starter", version.ref = "process_engine_adapter_cib7_version" }
+process-engine-adapter-cib7-bom = { module = "dev.bpm-crafters.process-engine-adapters:process-engine-adapter-cib-seven-bom", version.ref = "process_engine_adapter_cib7_version" }
+
+# BPMN-to-code (generates the typed process API from the *.bpmn models; testing = model validation)
+bpmn-to-code-runtime = { module = "io.miragon:bpmn-to-code-runtime", version.ref = "bpmn_to_code_version" }
+bpmn-to-code-testing = { module = "io.miragon:bpmn-to-code-testing", version.ref = "bpmn_to_code_testing_version" }
+
+# Architecture tests
+archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit_version" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist_version" }
+
+# Testing
+spring_test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring_version" }
+spring_web_test = { module = "org.springframework.boot:spring-boot-webmvc-test", version.ref = "spring_version" }
+spring_data_jpa_test = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test", version.ref = "spring_version" }
+mockito = { module = "org.mockito:mockito-inline", version = "5.2.0" }
+kotlin_mockito = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.3.0" }
+mockk = { module = "io.mockk:mockk", version = "1.14.11" }
+spring_mockk = { module = "com.ninja-squad:springmockk", version = "5.0.1" }
+h2 = { module = "com.h2database:h2", version = "2.4.240" }
+
+# Process test — CIB seven
+cib7-bpm-assert = { module = "org.cibseven.bpm:cibseven-bpm-assert", version.ref = "cib7_version" }
+cib7-bpm-junit5 = { module = "org.cibseven.bpm:cibseven-bpm-junit5", version.ref = "cib7_version" }
+
+# JGiven — CIB seven
+cib7-bpm-jgiven = { module = "org.cibseven.community:cibseven-bpm-jgiven", version.ref = "cib7_jgiven_version" }
+jgiven-kotlin = { module = "io.toolisticon.testing:jgiven-kotlin", version.ref = "jgiven_kotlin_version" }
+jgiven-junit5 = { module = "com.tngtech.jgiven:jgiven-junit5", version = "2.0.3" }
+
+[bundles]
+defaultService = ["kotlin-reflect", "kotlin_logging", "jackson-kotlin", "devtools", "web"]
+database = ["jpa", "postgres"]
+cibseven = ["cib7-webapp", "cib7-rest"]
+processEngineApi = ["process-engine-api", "process-engine-adapter-cib7-embedded", "process-engine-worker"]
+test = ["spring_test", "spring_web_test", "spring_data_jpa_test", "mockito", "mockk", "spring_mockk", "kotlin_mockito"]
+archunit = ["archunit"]
+konsist = ["konsist"]
+cib7ProcessTest = ["cib7-bpm-assert", "cib7-bpm-junit5", "h2"]
+cib7JGiven = ["cib7-bpm-jgiven", "cib7-bpm-junit5", "jgiven-kotlin", "jgiven-junit5"]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin_version" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin_version" }
+kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin_version" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin_version" }
+springframework = { id = "org.springframework.boot", version.ref = "spring_version" }
+spring-dependency = { id = "io.spring.dependency-management", version.ref = "spring_dependency_version" }
+bpmnToCode = { id = "io.miragon.bpmn-to-code-gradle", version.ref = "bpmn_to_code_version" }

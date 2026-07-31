@@ -1,0 +1,21 @@
+meta {
+  name: Report the handover
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}/report-handover
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the async continuations (order bike + issue insurance, then join) to reach the
+  // "handover reported" wait state.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+
+assert {
+  res.status: eq 202
+}

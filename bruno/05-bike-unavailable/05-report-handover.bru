@@ -1,0 +1,20 @@
+meta {
+  name: Report the handover
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}/report-handover
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the re-order of the alternative bike to succeed and the parallel branches to join.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+
+assert {
+  res.status: eq 202
+}

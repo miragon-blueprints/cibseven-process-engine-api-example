@@ -1,0 +1,15 @@
+meta {
+  name: Fire the signature-deadline timer
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{engineRest}}/job/{{deadlineJobId}}/execute
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 204
+}

@@ -1,0 +1,21 @@
+meta {
+  name: Assert the leasing is active
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{engineRest}}/history/activity-instance?processInstanceId={{processInstanceId}}&activityId=endEvent_leasingActive
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the withdrawal-period timer's continuation to reach the leasing-active end event.
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+}
+
+assert {
+  res.status: eq 200
+  res.body: length 1
+}

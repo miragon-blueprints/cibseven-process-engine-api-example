@@ -1,0 +1,97 @@
+name: Pre-Merge Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, build & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Lint BPMN (bpmnlint)
+        run: |
+          npm --prefix tools ci
+          npm --prefix tools run lint:bpmn
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Gradle build
+        run: ./gradlew build --no-daemon
+
+  bruno:
+    name: Bruno end-to-end scenarios
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.4
+        env:
+          POSTGRES_DB: bikeleasing
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin -d bikeleasing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Start the application
+        run: ./gradlew :service:app:bootRun --no-daemon > app.log 2>&1 &
+
+      - name: Wait for the engine to be ready
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/engine-rest/engine > /dev/null; then
+              echo "Engine is up"; exit 0
+            fi
+            sleep 3
+          done
+          echo "Engine did not start in time"; tail -n 200 app.log; exit 1
+
+      - name: Run Bruno scenarios
+        working-directory: bruno
+        run: npx --yes @usebruno/cli run . --env local -r
+
+      - name: Dump application log on failure
+        if: failure()
+        run: tail -n 300 app.log

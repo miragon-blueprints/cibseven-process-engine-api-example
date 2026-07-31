@@ -1,0 +1,20 @@
+meta {
+  name: Find the process instance
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{engineRest}}/process-instance?businessKey={{applicationId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].id: isDefined
+}
+
+vars:post-response {
+  processInstanceId: res.body[0].id
+}

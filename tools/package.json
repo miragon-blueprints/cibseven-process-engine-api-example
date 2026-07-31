@@ -1,0 +1,12 @@
+{
+  "name": "cibseven-embedded-example-tooling",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dev tooling for the CIB seven bike-leasing blueprint: BPMN linting (bpmnlint). Run from the repo root via `npm --prefix tools run <script>`.",
+  "scripts": {
+    "lint:bpmn": "bpmnlint \"../service/app/src/main/resources/bpmn/*.bpmn\""
+  },
+  "devDependencies": {
+    "bpmnlint": "11.12.1"
+  }
+}

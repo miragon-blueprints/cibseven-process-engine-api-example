@@ -1,0 +1,21 @@
+meta {
+  name: Assert the DMN rejected the application
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // The whole validate -> DMN -> reject chain runs through the async job executor.
+  await new Promise((resolve) => setTimeout(resolve, 2500));
+}
+
+assert {
+  res.status: eq 200
+  res.body.status: eq REJECTED
+}

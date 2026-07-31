@@ -1,0 +1,16 @@
+meta {
+  name: Assert the leasing is active
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{engineRest}}/history/activity-instance?processInstanceId={{processInstanceId}}&activityId=endEvent_leasingActive
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: length 1
+}

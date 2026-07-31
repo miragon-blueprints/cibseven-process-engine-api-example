@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "cibseven-bike-leasing",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

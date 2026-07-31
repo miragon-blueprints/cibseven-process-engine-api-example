@@ -1,0 +1,71 @@
+version: 2
+
+multi-ecosystem-groups:
+  backend:
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+
+updates:
+
+  # Backend dependencies (Gradle + the Postgres image in the dev stack) grouped into one PR
+  - package-ecosystem: "gradle"
+    directory: "/"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "backend"
+
+  - package-ecosystem: "docker-compose"
+    directory: "/stack"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "backend"
+
+  # Dev tooling (bpmnlint and its local plugin)
+  - package-ecosystem: "npm"
+    directory: "/tools"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      tooling-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      tooling-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "build"
+      include: "scope"
+    groups:
+      github-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+          - "major"
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"

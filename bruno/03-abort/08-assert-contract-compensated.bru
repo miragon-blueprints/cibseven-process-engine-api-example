@@ -1,0 +1,16 @@
+meta {
+  name: Assert the contract was compensated
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{engineRest}}/history/activity-instance?processInstanceId={{processInstanceId}}&activityId=serviceTask_cancelContract
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].id: isDefined
+}

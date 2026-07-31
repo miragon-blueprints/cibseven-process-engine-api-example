@@ -1,0 +1,20 @@
+meta {
+  name: Sign the contract
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}/sign-contract
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the async job executor to drive the process to the contract-signature wait state.
+  await new Promise((resolve) => setTimeout(resolve, 2500));
+}
+
+assert {
+  res.status: eq 202
+}

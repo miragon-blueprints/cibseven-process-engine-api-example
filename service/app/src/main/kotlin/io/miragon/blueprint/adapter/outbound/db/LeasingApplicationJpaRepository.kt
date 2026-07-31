@@ -1,0 +1,8 @@
+package io.miragon.blueprint.adapter.outbound.db
+
+import org.springframework.data.jpa.repository.JpaRepository
+import java.util.UUID
+
+interface LeasingApplicationJpaRepository : JpaRepository<LeasingApplicationEntity, UUID> {
+    fun findByApplicationId(id: UUID): LeasingApplicationEntity?
+}

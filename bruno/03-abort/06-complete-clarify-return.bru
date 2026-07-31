@@ -1,0 +1,31 @@
+meta {
+  name: Complete the clarify-return task
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{engineRest}}/task/{{clarifyReturnTaskId}}/complete
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "variables": {
+      "returnClarified": { "value": true, "type": "Boolean" }
+    }
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  Anti-pattern on purpose: `clarify-return` is completed directly through the engine REST API
+  (the same as a human submitting its Camunda Form). This never passes through our domain services,
+  so `returnClarified` lands only in a process variable and never reaches the domain model. Contrast
+  with `05-bike-unavailable/04-clarify-alternative`, which drives our own domain endpoint so the
+  chosen alternative bike is persisted on the aggregate before the task is completed.
+}
