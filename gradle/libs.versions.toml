@@ -1,13 +1,13 @@
 [versions]
 spring_version = "4.1.0"
 spring_dependency_version = "1.1.7"
-kotlin_version = "2.4.0"
+kotlin_version = "2.4.10"
 kotlin_logging_version = "3.0.5"
 cib7_version = "2.2.0"
 process_engine_api_version = "1.7"
-process_engine_worker_version = "0.8.4"
+process_engine_worker_version = "0.8.5"
 process_engine_adapter_cib7_version = "2026.07.1"
-bpmn_to_code_version = "3.1.0"
+bpmn_to_code_version = "5.1.0"
 bpmn_to_code_testing_version = "5.1.0"
 archunit_version = "1.4.2"
 konsist_version = "0.17.3"
@@ -18,7 +18,7 @@ jgiven_kotlin_version = "2.0.2.1"
 web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
 devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring_version" }
 jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring_version" }
-postgres = { module = "org.postgresql:postgresql", version = "42.7.12" }
+postgres = { module = "org.postgresql:postgresql", version = "42.7.13" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
 kotlin_logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin_logging_version" }
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
