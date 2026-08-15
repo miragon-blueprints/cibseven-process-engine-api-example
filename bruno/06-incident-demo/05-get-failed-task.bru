@@ -1,0 +1,21 @@
+meta {
+  name: Inspect the failed order external task
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{engineRest}}/external-task?processInstanceId={{processInstanceId}}&activityId=serviceTask_orderBike
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].id: isDefined
+  res.body[0].retries: eq 0
+}
+
+vars:post-response {
+  failedTaskId: res.body[0].id
+}

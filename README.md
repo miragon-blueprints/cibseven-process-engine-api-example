@@ -127,6 +127,13 @@ If the requested bike is out of stock, the `Clarify alternative with customer` u
 Bike availability itself is decided by a `BikeDealerPort` outbound adapter (`checkAvailability` /
 `order`) whose small out-of-stock deny-list drives the branch.
 
+## Incident demo
+
+Want to teach **transaction boundaries, retries and incidents**? Submit a request for the poison bike
+`BIKE-FAIL`: the simulated dealer "outage" fails the *Order bike from dealer* external task, its
+retries count down to zero (3 attempts, per the adapter's retry policy), and an **incident** appears
+in the Cockpit to analyze and retry. A ready-to-run Bruno collection lives in `bruno/06-incident-demo/`.
+
 ## Contributing
 
 Contributions are welcome. Please open an issue to discuss substantial changes first, keep the

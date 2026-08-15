@@ -1,0 +1,34 @@
+meta {
+  name: Assert an incident was raised on the order task
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{engineRest}}/incident?processInstanceId={{processInstanceId}}&incidentType=failedExternalTask
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // The order task is an external task; when the dealer "outage" fails it, the cib-seven-embedded
+  // adapter retries it 3 times (its default retry policy) on the delivery poll before raising the
+  // incident. Wait out the (short) retry window so the incident exists by the time we query.
+  await new Promise((resolve) => setTimeout(resolve, 10000));
+}
+
+assert {
+  res.status: eq 200
+  res.body: length 1
+  res.body[0].incidentType: eq failedExternalTask
+  res.body[0].activityId: eq serviceTask_orderBike
+}
+
+docs {
+  # Asserting the incident
+
+  For an external-task incident the failing step is carried in the incident's `activityId`. The
+  reference (Camunda 7 delegate) asserts `failedActivityId` to avoid the async-continuation job being
+  mis-attributed, but here there is no separate job: `failedActivityId` is null and `activityId` is
+  `serviceTask_orderBike`.
+}

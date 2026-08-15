@@ -1,0 +1,32 @@
+meta {
+  name: Manually retry the failed external task (API equivalent of Cockpit "Increment retries")
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{engineRest}}/external-task/{{failedTaskId}}/retries
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "retries": 3
+  }
+}
+
+docs {
+  # Manual retry
+
+  This re-arms the failed order external task with fresh retries — exactly what the Cockpit
+  "Increment retries" button does. Because BIKE-FAIL is a *permanent* simulated outage, the task
+  will run, fail again, and the incident returns once the retries are exhausted. That is the
+  teaching point: a manual retry re-runs the work but is not a fix for a systematic error. To
+  demonstrate an actual fix, start a fresh request with a valid bike id (e.g. BIKE-900) and watch
+  it complete.
+}
+
+assert {
+  res.status: eq 204
+}
