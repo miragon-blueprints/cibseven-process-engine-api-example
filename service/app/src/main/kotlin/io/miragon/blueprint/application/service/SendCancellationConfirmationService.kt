@@ -5,8 +5,10 @@ import io.miragon.blueprint.application.port.outbound.LeasingApplicationReposito
 import io.miragon.blueprint.application.port.outbound.NotificationPort
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
+@Transactional
 class SendCancellationConfirmationService(
     private val repository: LeasingApplicationRepository,
     private val notification: NotificationPort,
@@ -15,5 +17,6 @@ class SendCancellationConfirmationService(
     override fun sendCancellationConfirmation(id: ApplicationId) {
         val application = repository.findById(id) ?: error("Unknown application $id")
         notification.send("Your bike-leasing application has been cancelled", application)
+        repository.save(application.cancel())
     }
 }
