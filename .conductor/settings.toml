@@ -1,0 +1,24 @@
+"$schema" = "https://conductor.build/schemas/settings.repo.schema.json"
+
+[scripts]
+run_mode = "nonconcurrent"
+
+# One-time setup per workspace: install BPMN linting tooling.
+setup = """
+npm --prefix tools ci
+"""
+
+# Tear down the local Postgres container when a workspace is archived.
+archive = "docker compose -f stack/docker-compose.yml down -v || true"
+
+[scripts.run.infra]
+command = "docker compose -f stack/docker-compose.yml up"
+
+[scripts.run.backend]
+command = "./gradlew :service:app:bootRun"
+
+[scripts.run.test]
+command = "./gradlew build"
+
+[scripts.run.smoke]
+command = "cd bruno && npx --yes @usebruno/cli run . --env local -r"
