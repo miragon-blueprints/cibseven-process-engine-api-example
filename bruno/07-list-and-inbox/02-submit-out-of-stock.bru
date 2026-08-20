@@ -1,0 +1,31 @@
+meta {
+  name: Submit a request for the out-of-stock bike
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "customerName": "Ida Inbox",
+    "email": "ida@example.com",
+    "age": 35,
+    "monthlyNetIncome": 3500.0,
+    "bikeId": "BIKE-OOS",
+    "bikeModel": "Mountain Trail 600"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.applicationId: isDefined
+}
+
+vars:post-response {
+  applicationId: res.body.applicationId
+}

@@ -2,6 +2,7 @@ package io.miragon.blueprint.adapter.inbound.rest
 
 import io.miragon.blueprint.application.port.inbound.WithdrawApplicationUseCase
 import io.miragon.blueprint.domain.leasing.ApplicationId
+import io.swagger.v3.oas.annotations.Operation
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -14,6 +15,7 @@ class WithdrawApplicationController(
     private val useCase: WithdrawApplicationUseCase,
 ) {
 
+    @Operation(operationId = "withdrawApplication")
     @PostMapping("/{applicationId}/withdraw")
     fun withdraw(@PathVariable applicationId: String): ResponseEntity<Unit> {
         useCase.withdraw(ApplicationId.of(applicationId))

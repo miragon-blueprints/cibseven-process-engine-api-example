@@ -1,6 +1,8 @@
 package io.miragon.blueprint.adapter.outbound.db
 
+import io.miragon.blueprint.application.port.outbound.LeasingApplicationRepository
 import io.miragon.blueprint.domain.leasing.ApplicationId
+import io.miragon.blueprint.domain.leasing.LeasingStatus
 import io.miragon.blueprint.domain.leasing.testLeasingApplication
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -57,5 +59,43 @@ class LeasingApplicationPersistenceAdapterTest {
         assertThat(underTest.findById(id))
             .usingRecursiveComparison()
             .isEqualTo(testLeasingApplication(id = id))
+    }
+
+    @Test
+    fun `findAll returns a page ordered by creation date, newest first`() {
+
+        // given: three applications created on different days
+        val older = testLeasingApplication(id = ApplicationId(UUID.randomUUID()), createdAt = java.time.LocalDateTime.of(2026, 1, 1, 8, 0))
+        val newer = testLeasingApplication(id = ApplicationId(UUID.randomUUID()), createdAt = java.time.LocalDateTime.of(2026, 3, 1, 8, 0))
+        val newest = testLeasingApplication(id = ApplicationId(UUID.randomUUID()), createdAt = java.time.LocalDateTime.of(2026, 6, 1, 8, 0))
+        listOf(older, newest, newer).forEach { underTest.save(it) }
+        entityManager.flush()
+        entityManager.clear()
+
+        // when: the first page is read without a filter
+        val page = underTest.findAll(LeasingApplicationRepository.Criteria(status = null, page = 0, size = 10))
+
+        // then: all three come back, newest first
+        assertThat(page.totalElements).isEqualTo(3)
+        assertThat(page.items.map { it.id }).containsExactly(newest.id, newer.id, older.id)
+    }
+
+    @Test
+    fun `findAll filters by status and paginates`() {
+
+        // given: two RECEIVED and one ACTIVE application
+        underTest.save(testLeasingApplication(id = ApplicationId(UUID.randomUUID()), status = LeasingStatus.RECEIVED))
+        underTest.save(testLeasingApplication(id = ApplicationId(UUID.randomUUID()), status = LeasingStatus.RECEIVED))
+        underTest.save(testLeasingApplication(id = ApplicationId(UUID.randomUUID()), status = LeasingStatus.ACTIVE))
+        entityManager.flush()
+        entityManager.clear()
+
+        // when: only ACTIVE applications are requested
+        val page = underTest.findAll(LeasingApplicationRepository.Criteria(status = LeasingStatus.ACTIVE, page = 0, size = 10))
+
+        // then: only the single ACTIVE application is returned
+        assertThat(page.totalElements).isEqualTo(1)
+        assertThat(page.items).hasSize(1)
+        assertThat(page.items.single().status).isEqualTo(LeasingStatus.ACTIVE)
     }
 }

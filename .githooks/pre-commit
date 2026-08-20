@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Repo-wide pre-commit hook. Install once with: npm run hooks:install
+#
+# It is the single git hooks path for the repo. It runs one cheap, high-value check on what you
+# staged: bpmnlint on any changed BPMN model — layout/wiring bugs live in the diagram, invisible in
+# a diff.
+set -euo pipefail
+
+root="$(git rev-parse --show-toplevel)"
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+# BPMN models
+if echo "$staged" | grep -q '\.bpmn$'; then
+  echo "pre-commit: linting BPMN models"
+  npm --prefix "$root" run --silent lint:bpmn
+fi
+
+exit 0

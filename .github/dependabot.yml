@@ -22,9 +22,9 @@ updates:
       - "*"
     multi-ecosystem-group: "backend"
 
-  # Dev tooling (bpmnlint and its local plugin)
+  # Dev tooling (bpmnlint and its plugin) — package.json lives at the repo root
   - package-ecosystem: "npm"
-    directory: "/tools"
+    directory: "/"
     schedule:
       interval: "monthly"
     labels:

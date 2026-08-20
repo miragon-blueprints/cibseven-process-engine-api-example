@@ -26,4 +26,17 @@ class RequestOrderCancellationServiceTest {
         verify { bikeDealer.requestCancellation(orderId) }
         confirmVerified(bikeDealer)
     }
+
+    @Test
+    fun `requestCancellation returns false when the dealer refuses`() {
+        // given: an order the dealer will not allow cancelling
+        val orderId = OrderId("ORDER-901")
+        every { bikeDealer.requestCancellation(orderId) } returns false
+        // when: the dealer is asked whether it can be cancelled
+        val possible = underTest.requestCancellation(orderId)
+        // then: the dealer's negative answer is propagated unchanged
+        assertThat(possible).isFalse()
+        verify { bikeDealer.requestCancellation(orderId) }
+        confirmVerified(bikeDealer)
+    }
 }

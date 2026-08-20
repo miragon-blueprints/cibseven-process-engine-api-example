@@ -43,4 +43,40 @@ class BikePortfolioPersistenceAdapterTest {
         // when / then: the lookup returns null
         assertThat(underTest.findByBikeId(BikeId("BIKE-000"))).isNull()
     }
+
+    @Test
+    fun `findAll returns the whole catalogue ordered by id`() {
+
+        // given: two bikes saved out of id order
+        underTest.save(Bike(BikeId("BIKE-900"), "Gravel Explorer 900"))
+        underTest.save(Bike(BikeId("BIKE-800"), "Carbon Road 800"))
+        entityManager.flush()
+        entityManager.clear()
+
+        // when / then: both are returned, ordered ascending by id
+        assertThat(underTest.findAll())
+            .containsExactly(
+                Bike(BikeId("BIKE-800"), "Carbon Road 800"),
+                Bike(BikeId("BIKE-900"), "Gravel Explorer 900"),
+            )
+    }
+
+    @Test
+    fun `findAllByIds resolves only the requested bikes and short-circuits on empty input`() {
+
+        // given: three bikes
+        underTest.save(Bike(BikeId("BIKE-900"), "Gravel Explorer 900"))
+        underTest.save(Bike(BikeId("BIKE-800"), "Carbon Road 800"))
+        underTest.save(Bike(BikeId("BIKE-OOS"), "Mountain Trail 600"))
+        entityManager.flush()
+        entityManager.clear()
+
+        // when: two of them are looked up by id
+        val result = underTest.findAllByIds(listOf(BikeId("BIKE-900"), BikeId("BIKE-OOS")))
+
+        // then: exactly those two come back
+        assertThat(result.map { it.bikeId.value }).containsExactlyInAnyOrder("BIKE-900", "BIKE-OOS")
+        // and: an empty request returns an empty list without touching the database
+        assertThat(underTest.findAllByIds(emptyList())).isEmpty()
+    }
 }

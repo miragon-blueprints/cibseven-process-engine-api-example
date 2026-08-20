@@ -1,0 +1,26 @@
+meta {
+  name: The inbox no longer lists our application
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/api/tasks/clarify-alternative
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the clarification to be completed and the task to leave the inbox.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("our application has left the inbox", function () {
+    const stillThere = res.getBody().some((t) => t.applicationId === bru.getVar("applicationId"));
+    expect(stillThere).to.equal(false);
+  });
+}

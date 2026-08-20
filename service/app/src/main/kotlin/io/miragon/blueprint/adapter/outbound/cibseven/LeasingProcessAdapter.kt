@@ -17,6 +17,7 @@ import io.miragon.blueprint.domain.bike.BikeId
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import io.miragon.blueprint.domain.leasing.LeasingApplication
 import org.springframework.stereotype.Component
+import java.util.concurrent.CompletionException
 
 /**
  * Drives the embedded CIB seven engine through the process-engine-api. The application id is used as
@@ -64,18 +65,27 @@ class LeasingProcessAdapter(
     override fun correlateApplicationWithdrawn(id: ApplicationId) =
         correlate(Messages.MIRAVELO_APPLICATION_WITHDRAWN.value, id)
 
-    /** Correlates [messageName] to the instance whose global `correlationKey` variable equals the id. */
+    /**
+     * Correlates [messageName] to the instance whose global `correlationKey` variable equals the id.
+     * A no-longer-valid correlation (e.g. the token already left the wait state) surfaces the engine's
+     * [org.cibseven.bpm.engine.MismatchingMessageCorrelationException], which the REST advice maps to a
+     * 409 — so it is unwrapped from the [CompletionException] the async API wraps it in.
+     */
     private fun correlate(messageName: String, id: ApplicationId) {
-        correlationApi.correlateMessage(
-            cmd = CorrelateMessageCmd(
-                messageName = messageName,
-                payload = emptyMap(),
-                correlation = Correlation.withKey(id.value.toString()),
-                restrictions = CommonRestrictions.builder()
-                    .withRestriction("useGlobalCorrelationKey", "true")
-                    .build(),
-            ),
-        ).join()
+        try {
+            correlationApi.correlateMessage(
+                cmd = CorrelateMessageCmd(
+                    messageName = messageName,
+                    payload = emptyMap(),
+                    correlation = Correlation.withKey(id.value.toString()),
+                    restrictions = CommonRestrictions.builder()
+                        .withRestriction("useGlobalCorrelationKey", "true")
+                        .build(),
+                ),
+            ).join()
+        } catch (e: CompletionException) {
+            throw e.cause ?: e
+        }
     }
 
     /**

@@ -8,38 +8,38 @@
           <camunda:property name="additionalInputVariables" value="orderId, bikeId" />
         </camunda:properties>
       </bpmn:extensionElements>
-      <bpmn:outgoing>Flow_0510wb5</bpmn:outgoing>
+      <bpmn:outgoing>flow_requiredToRequest</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_0510wb5" sourceRef="startEvent_cancellationRequired" targetRef="serviceTask_requestCancellation" />
-    <bpmn:exclusiveGateway id="gateway_cancellationPossible" name="Cancellation possible?" default="Flow_1e8ks1k">
-      <bpmn:incoming>Flow_0tc4yfk</bpmn:incoming>
-      <bpmn:outgoing>Flow_1a0g4v1</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1e8ks1k</bpmn:outgoing>
+    <bpmn:sequenceFlow id="flow_requiredToRequest" sourceRef="startEvent_cancellationRequired" targetRef="serviceTask_requestCancellation" />
+    <bpmn:exclusiveGateway id="gateway_cancellationPossible" name="Cancellation possible?" default="flow_cancellationPossible">
+      <bpmn:incoming>flow_requestToPossibleGateway</bpmn:incoming>
+      <bpmn:outgoing>flow_cancellationNotPossible</bpmn:outgoing>
+      <bpmn:outgoing>flow_cancellationPossible</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_0tc4yfk" sourceRef="serviceTask_requestCancellation" targetRef="gateway_cancellationPossible" />
-    <bpmn:sequenceFlow id="Flow_1a0g4v1" name="No" sourceRef="gateway_cancellationPossible" targetRef="userTask_clarifyReturn">
+    <bpmn:sequenceFlow id="flow_requestToPossibleGateway" sourceRef="serviceTask_requestCancellation" targetRef="gateway_cancellationPossible" />
+    <bpmn:sequenceFlow id="flow_cancellationNotPossible" name="No" sourceRef="gateway_cancellationPossible" targetRef="userTask_clarifyReturn">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${cancellationPossible}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:endEvent id="endEvent_orderReversed" name="Order reversed">
-      <bpmn:incoming>Flow_0w76x5f</bpmn:incoming>
+      <bpmn:incoming>flow_joinToReversed</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="Flow_1e8ks1k" name="Yes" sourceRef="gateway_cancellationPossible" targetRef="gateway_join" />
+    <bpmn:sequenceFlow id="flow_cancellationPossible" name="Yes" sourceRef="gateway_cancellationPossible" targetRef="gateway_join" />
     <bpmn:userTask id="userTask_clarifyReturn" name="Clarify return with supplier" camunda:asyncAfter="true" camunda:formRef="clarifyReturnForm" camunda:formRefBinding="deployment">
       <bpmn:documentation>Kept deliberately as a FORM-ONLY task to show the trade-off. It is completed straight through its Camunda Form (Tasklist) or the engine REST API, so the completion never passes through our domain services: any data entered on the form lands only in process variables and never reaches the domain model. In other words, for capturing business data this is NOT best practice. Contrast this with "Clarify alternative with customer" in bike-leasing.bpmn, which offers a domain REST endpoint (POST /api/bike-leasing/{id}/clarify-alternative) that updates the aggregate before completing the task.</bpmn:documentation>
-      <bpmn:incoming>Flow_1a0g4v1</bpmn:incoming>
-      <bpmn:outgoing>Flow_0gkp33w</bpmn:outgoing>
+      <bpmn:incoming>flow_cancellationNotPossible</bpmn:incoming>
+      <bpmn:outgoing>flow_clarifyToBookCosts</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:sequenceFlow id="Flow_0gkp33w" sourceRef="userTask_clarifyReturn" targetRef="serviceTask_bookCosts" />
+    <bpmn:sequenceFlow id="flow_clarifyToBookCosts" sourceRef="userTask_clarifyReturn" targetRef="serviceTask_bookCosts" />
     <bpmn:exclusiveGateway id="gateway_join">
-      <bpmn:incoming>Flow_1e8ks1k</bpmn:incoming>
-      <bpmn:incoming>Flow_1v5tej2</bpmn:incoming>
-      <bpmn:outgoing>Flow_0w76x5f</bpmn:outgoing>
+      <bpmn:incoming>flow_cancellationPossible</bpmn:incoming>
+      <bpmn:incoming>flow_bookCostsToJoin</bpmn:incoming>
+      <bpmn:outgoing>flow_joinToReversed</bpmn:outgoing>
     </bpmn:exclusiveGateway>
-    <bpmn:sequenceFlow id="Flow_0w76x5f" sourceRef="gateway_join" targetRef="endEvent_orderReversed" />
-    <bpmn:sequenceFlow id="Flow_1v5tej2" sourceRef="serviceTask_bookCosts" targetRef="gateway_join" />
+    <bpmn:sequenceFlow id="flow_joinToReversed" sourceRef="gateway_join" targetRef="endEvent_orderReversed" />
+    <bpmn:sequenceFlow id="flow_bookCostsToJoin" sourceRef="serviceTask_bookCosts" targetRef="gateway_join" />
     <bpmn:serviceTask id="serviceTask_bookCosts" name="Book costs" camunda:asyncAfter="true" camunda:type="external" camunda:topic="bookCosts">
-      <bpmn:incoming>Flow_0gkp33w</bpmn:incoming>
-      <bpmn:outgoing>Flow_1v5tej2</bpmn:outgoing>
+      <bpmn:incoming>flow_clarifyToBookCosts</bpmn:incoming>
+      <bpmn:outgoing>flow_bookCostsToJoin</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="serviceTask_requestCancellation" name="Request cancellation" camunda:asyncAfter="true" camunda:type="external" camunda:topic="requestCancellation">
       <bpmn:extensionElements>
@@ -48,8 +48,8 @@
           <camunda:property name="additionalOutputVariables" value="cancellationPossible" />
         </camunda:properties>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_0510wb5</bpmn:incoming>
-      <bpmn:outgoing>Flow_0tc4yfk</bpmn:outgoing>
+      <bpmn:incoming>flow_requiredToRequest</bpmn:incoming>
+      <bpmn:outgoing>flow_requestToPossibleGateway</bpmn:outgoing>
     </bpmn:serviceTask>
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
@@ -86,15 +86,15 @@
         <dc:Bounds x="250" y="60" width="100" height="80" />
         <bpmndi:BPMNLabel />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_0510wb5_di" bpmnElement="Flow_0510wb5">
+      <bpmndi:BPMNEdge id="Flow_0510wb5_di" bpmnElement="flow_requiredToRequest">
         <di:waypoint x="208" y="100" />
         <di:waypoint x="250" y="100" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0tc4yfk_di" bpmnElement="Flow_0tc4yfk">
+      <bpmndi:BPMNEdge id="Flow_0tc4yfk_di" bpmnElement="flow_requestToPossibleGateway">
         <di:waypoint x="350" y="100" />
         <di:waypoint x="395" y="100" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1a0g4v1_di" bpmnElement="Flow_1a0g4v1">
+      <bpmndi:BPMNEdge id="Flow_1a0g4v1_di" bpmnElement="flow_cancellationNotPossible">
         <di:waypoint x="420" y="125" />
         <di:waypoint x="420" y="200" />
         <di:waypoint x="480" y="200" />
@@ -102,22 +102,22 @@
           <dc:Bounds x="432" y="153" width="15" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1e8ks1k_di" bpmnElement="Flow_1e8ks1k">
+      <bpmndi:BPMNEdge id="Flow_1e8ks1k_di" bpmnElement="flow_cancellationPossible">
         <di:waypoint x="445" y="100" />
         <di:waypoint x="755" y="100" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="591" y="82" width="18" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0gkp33w_di" bpmnElement="Flow_0gkp33w">
+      <bpmndi:BPMNEdge id="Flow_0gkp33w_di" bpmnElement="flow_clarifyToBookCosts">
         <di:waypoint x="580" y="200" />
         <di:waypoint x="620" y="200" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0w76x5f_di" bpmnElement="Flow_0w76x5f">
+      <bpmndi:BPMNEdge id="Flow_0w76x5f_di" bpmnElement="flow_joinToReversed">
         <di:waypoint x="805" y="100" />
         <di:waypoint x="852" y="100" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1v5tej2_di" bpmnElement="Flow_1v5tej2">
+      <bpmndi:BPMNEdge id="Flow_1v5tej2_di" bpmnElement="flow_bookCostsToJoin">
         <di:waypoint x="720" y="200" />
         <di:waypoint x="780" y="200" />
         <di:waypoint x="780" y="125" />

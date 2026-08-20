@@ -4,8 +4,8 @@
   <bpmn:message id="Message_ContractSigned" name="miravelo.contractSigned" />
   <bpmn:message id="Message_HandoverReported" name="miravelo.handoverReported" />
   <bpmn:message id="Message_ApplicationWithdrawn" name="miravelo.applicationWithdrawn" />
-  <bpmn:error id="Error_ApplicationInvalid" name="Application Invalid" errorCode="applicationInvalid" />
-  <bpmn:escalation id="Escalation_ContractNotSigned" name="Contract Not Signed" escalationCode="contractNotSigned" />
+  <bpmn:error id="Error_ApplicationInvalid" name="Application_Invalid" errorCode="applicationInvalid" />
+  <bpmn:escalation id="Escalation_ContractNotSigned" name="Contract_Not_Signed" escalationCode="contractNotSigned" />
   <bpmn:process id="bikeLeasingProcess" name="MiraVelo Bike Leasing" isExecutable="true" camunda:historyTimeToLive="P180D">
     <bpmn:startEvent id="startEvent_leasingRequestReceived" name="Leasing request received" camunda:asyncAfter="true">
       <bpmn:extensionElements>
@@ -15,7 +15,7 @@
           <camunda:property name="additionalInputVariables" value="applicationId, bikeId, monthlyNetIncome, age" />
         </camunda:properties>
       </bpmn:extensionElements>
-      <bpmn:outgoing>Flow_0cq39pq</bpmn:outgoing>
+      <bpmn:outgoing>flow_requestToValidation</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_0233gqq" messageRef="Message_LeasingRequestReceived" />
     </bpmn:startEvent>
     <bpmn:serviceTask id="serviceTask_orderBike" name="Order bike from dealer" camunda:asyncAfter="true" camunda:type="external" camunda:topic="orderBike">
@@ -26,97 +26,101 @@
           <camunda:property name="additionalOutputVariables" value="orderId, bikeAvailable" />
         </camunda:properties>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_1oudvdg</bpmn:incoming>
-      <bpmn:outgoing>Flow_0bgyqyx</bpmn:outgoing>
+      <bpmn:incoming>flow_bikeSourceToOrder</bpmn:incoming>
+      <bpmn:outgoing>flow_orderedToBikeAvailable</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="serviceTask_cancelPolicy" name="Cancel policy" isForCompensation="true" camunda:asyncAfter="true" camunda:type="external" camunda:topic="cancelPolicy" />
     <bpmn:endEvent id="endEvent_applicationRejected" name="Application rejected">
-      <bpmn:incoming>Flow_054y6af</bpmn:incoming>
+      <bpmn:incoming>flow_rejectionSent</bpmn:incoming>
     </bpmn:endEvent>
     <bpmn:intermediateCatchEvent id="event_handoverReported" name="Handover reported" camunda:asyncAfter="true">
-      <bpmn:incoming>Flow_0tjit66</bpmn:incoming>
-      <bpmn:outgoing>Flow_0msl1d4</bpmn:outgoing>
+      <bpmn:incoming>flow_joinToHandover</bpmn:incoming>
+      <bpmn:outgoing>flow_handoverToWithdrawalPeriod</bpmn:outgoing>
       <bpmn:messageEventDefinition id="MessageEventDefinition_1m0s1ya" messageRef="Message_HandoverReported" />
     </bpmn:intermediateCatchEvent>
     <bpmn:endEvent id="endEvent_leasingActive" name="Leasing active">
-      <bpmn:incoming>Flow_1czyhqn</bpmn:incoming>
+      <bpmn:incoming>flow_activateToLeasingActive</bpmn:incoming>
     </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="gateway_rejectionJoin" name="Rejection reason">
+      <bpmn:incoming>flow_invalidToRejection</bpmn:incoming>
+      <bpmn:incoming>flow_notSolvent</bpmn:incoming>
+      <bpmn:incoming>flow_notSignedToRejection</bpmn:incoming>
+      <bpmn:outgoing>flow_rejectionJoined</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="serviceTask_sendRejection" name="Send rejection" camunda:asyncAfter="true" camunda:type="external" camunda:topic="sendRejection">
-      <bpmn:incoming>Flow_1g1dict</bpmn:incoming>
-      <bpmn:incoming>Flow_00bctyk</bpmn:incoming>
-      <bpmn:incoming>Flow_0p7ddam</bpmn:incoming>
-      <bpmn:outgoing>Flow_054y6af</bpmn:outgoing>
+      <bpmn:incoming>flow_rejectionJoined</bpmn:incoming>
+      <bpmn:outgoing>flow_rejectionSent</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:serviceTask id="serviceTask_validateApplication" name="Validate application" camunda:asyncAfter="true" camunda:type="external" camunda:topic="validateApplication">
-      <bpmn:incoming>Flow_0cq39pq</bpmn:incoming>
-      <bpmn:outgoing>Flow_08ad25m</bpmn:outgoing>
+      <bpmn:incoming>flow_requestToValidation</bpmn:incoming>
+      <bpmn:outgoing>flow_validatedToCreditCheck</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="gateway_isSolvent" name="Solvent?" default="Flow_0dj8bxx">
-      <bpmn:incoming>Flow_10dsfgr</bpmn:incoming>
-      <bpmn:outgoing>Flow_0dj8bxx</bpmn:outgoing>
-      <bpmn:outgoing>Flow_00bctyk</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="gateway_isSolvent" name="Solvent?" default="flow_solvent">
+      <bpmn:incoming>flow_creditCheckToSolvency</bpmn:incoming>
+      <bpmn:outgoing>flow_solvent</bpmn:outgoing>
+      <bpmn:outgoing>flow_notSolvent</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:businessRuleTask id="businessRuleTask_checkCreditRating" name="Check credit rating" camunda:resultVariable="solvent" camunda:decisionRef="checkCreditRating" camunda:mapDecisionResult="singleEntry">
-      <bpmn:incoming>Flow_08ad25m</bpmn:incoming>
-      <bpmn:outgoing>Flow_10dsfgr</bpmn:outgoing>
+      <bpmn:incoming>flow_validatedToCreditCheck</bpmn:incoming>
+      <bpmn:outgoing>flow_creditCheckToSolvency</bpmn:outgoing>
     </bpmn:businessRuleTask>
     <bpmn:subProcess id="subProcess_concludeContract" name="Conclude contract">
-      <bpmn:incoming>Flow_0dj8bxx</bpmn:incoming>
-      <bpmn:outgoing>Flow_17zd4n8</bpmn:outgoing>
+      <bpmn:incoming>flow_solvent</bpmn:incoming>
+      <bpmn:outgoing>flow_contractConcludedToFork</bpmn:outgoing>
       <bpmn:startEvent id="startEvent_customerEligible" name="Customer eligible">
-        <bpmn:outgoing>Flow_1jra6g7</bpmn:outgoing>
+        <bpmn:outgoing>flow_eligibleToSendContract</bpmn:outgoing>
       </bpmn:startEvent>
-      <bpmn:sequenceFlow id="Flow_1jra6g7" sourceRef="startEvent_customerEligible" targetRef="serviceTask_sendContract" />
-      <bpmn:sequenceFlow id="Flow_0ff6219" sourceRef="serviceTask_sendContract" targetRef="gateway_awaitSignature" />
+      <bpmn:sequenceFlow id="flow_eligibleToSendContract" sourceRef="startEvent_customerEligible" targetRef="serviceTask_sendContract" />
+      <bpmn:sequenceFlow id="flow_contractSentToAwait" sourceRef="serviceTask_sendContract" targetRef="gateway_awaitSignature" />
       <bpmn:eventBasedGateway id="gateway_awaitSignature">
-        <bpmn:incoming>Flow_0ff6219</bpmn:incoming>
-        <bpmn:outgoing>Flow_0ete2ij</bpmn:outgoing>
-        <bpmn:outgoing>Flow_1uekrwv</bpmn:outgoing>
+        <bpmn:incoming>flow_contractSentToAwait</bpmn:incoming>
+        <bpmn:outgoing>flow_awaitToSigned</bpmn:outgoing>
+        <bpmn:outgoing>flow_awaitToDeadline</bpmn:outgoing>
       </bpmn:eventBasedGateway>
       <bpmn:intermediateCatchEvent id="event_contractSigned" name="Contract signed" camunda:asyncAfter="true">
-        <bpmn:incoming>Flow_0ete2ij</bpmn:incoming>
-        <bpmn:outgoing>Flow_0m29pj0</bpmn:outgoing>
+        <bpmn:incoming>flow_awaitToSigned</bpmn:incoming>
+        <bpmn:outgoing>flow_signedToContractValid</bpmn:outgoing>
         <bpmn:messageEventDefinition id="MessageEventDefinition_1s3mj11" messageRef="Message_ContractSigned" />
       </bpmn:intermediateCatchEvent>
-      <bpmn:sequenceFlow id="Flow_0ete2ij" sourceRef="gateway_awaitSignature" targetRef="event_contractSigned" />
+      <bpmn:sequenceFlow id="flow_awaitToSigned" sourceRef="gateway_awaitSignature" targetRef="event_contractSigned" />
       <bpmn:endEvent id="endEvent_contractValid" name="Contract valid">
-        <bpmn:incoming>Flow_0m29pj0</bpmn:incoming>
+        <bpmn:incoming>flow_signedToContractValid</bpmn:incoming>
       </bpmn:endEvent>
-      <bpmn:sequenceFlow id="Flow_0m29pj0" sourceRef="event_contractSigned" targetRef="endEvent_contractValid" />
+      <bpmn:sequenceFlow id="flow_signedToContractValid" sourceRef="event_contractSigned" targetRef="endEvent_contractValid" />
       <bpmn:intermediateCatchEvent id="event_signatureDeadline" name="14 days">
-        <bpmn:incoming>Flow_1uekrwv</bpmn:incoming>
-        <bpmn:outgoing>Flow_1it2fbs</bpmn:outgoing>
+        <bpmn:incoming>flow_awaitToDeadline</bpmn:incoming>
+        <bpmn:outgoing>flow_deadlineToNotSigned</bpmn:outgoing>
         <bpmn:timerEventDefinition id="TimerEventDefinition_0hpbdck">
           <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P14D</bpmn:timeDuration>
         </bpmn:timerEventDefinition>
       </bpmn:intermediateCatchEvent>
-      <bpmn:sequenceFlow id="Flow_1uekrwv" sourceRef="gateway_awaitSignature" targetRef="event_signatureDeadline" />
-      <bpmn:sequenceFlow id="Flow_1it2fbs" sourceRef="event_signatureDeadline" targetRef="endEvent_notSigned" />
+      <bpmn:sequenceFlow id="flow_awaitToDeadline" sourceRef="gateway_awaitSignature" targetRef="event_signatureDeadline" />
+      <bpmn:sequenceFlow id="flow_deadlineToNotSigned" sourceRef="event_signatureDeadline" targetRef="endEvent_notSigned" />
       <bpmn:endEvent id="endEvent_notSigned" name="Not signed">
-        <bpmn:incoming>Flow_1it2fbs</bpmn:incoming>
+        <bpmn:incoming>flow_deadlineToNotSigned</bpmn:incoming>
         <bpmn:escalationEventDefinition id="EscalationEventDefinition_0wpbfeq" escalationRef="Escalation_ContractNotSigned" />
       </bpmn:endEvent>
       <bpmn:serviceTask id="serviceTask_sendContract" name="Send contract" camunda:asyncAfter="true" camunda:type="external" camunda:topic="sendContract">
-        <bpmn:incoming>Flow_1jra6g7</bpmn:incoming>
-        <bpmn:outgoing>Flow_0ff6219</bpmn:outgoing>
+        <bpmn:incoming>flow_eligibleToSendContract</bpmn:incoming>
+        <bpmn:outgoing>flow_contractSentToAwait</bpmn:outgoing>
       </bpmn:serviceTask>
     </bpmn:subProcess>
-    <bpmn:sequenceFlow id="Flow_reminder1" sourceRef="boundary_signatureReminder" targetRef="serviceTask_sendReminderMail" />
-    <bpmn:sequenceFlow id="Flow_reminder2" sourceRef="serviceTask_sendReminderMail" targetRef="endEvent_prospectReminded" />
+    <bpmn:sequenceFlow id="flow_reminderToMail" sourceRef="event_signatureReminder" targetRef="serviceTask_sendReminderMail" />
+    <bpmn:sequenceFlow id="flow_mailToProspectReminded" sourceRef="serviceTask_sendReminderMail" targetRef="endEvent_prospectReminded" />
     <bpmn:parallelGateway id="gateway_fork">
-      <bpmn:incoming>Flow_17zd4n8</bpmn:incoming>
-      <bpmn:outgoing>Flow_0ncgjti</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0sm2h51</bpmn:outgoing>
+      <bpmn:incoming>flow_contractConcludedToFork</bpmn:incoming>
+      <bpmn:outgoing>flow_forkToBikeSource</bpmn:outgoing>
+      <bpmn:outgoing>flow_forkToInsurance</bpmn:outgoing>
     </bpmn:parallelGateway>
     <bpmn:parallelGateway id="gateway_join">
-      <bpmn:incoming>Flow_13li8f0</bpmn:incoming>
-      <bpmn:incoming>Flow_1qm0pcr</bpmn:incoming>
-      <bpmn:outgoing>Flow_0tjit66</bpmn:outgoing>
+      <bpmn:incoming>flow_insuranceToJoin</bpmn:incoming>
+      <bpmn:incoming>flow_bikeAvailable</bpmn:incoming>
+      <bpmn:outgoing>flow_joinToHandover</bpmn:outgoing>
     </bpmn:parallelGateway>
-    <bpmn:exclusiveGateway id="gateway_bikeAvailable" name="Bike available?" default="Flow_1qm0pcr">
-      <bpmn:incoming>Flow_0bgyqyx</bpmn:incoming>
-      <bpmn:outgoing>Flow_1qm0pcr</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0dbz33i</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="gateway_bikeAvailable" name="Bike available?" default="flow_bikeAvailable">
+      <bpmn:incoming>flow_orderedToBikeAvailable</bpmn:incoming>
+      <bpmn:outgoing>flow_bikeAvailable</bpmn:outgoing>
+      <bpmn:outgoing>flow_bikeUnavailable</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:userTask id="userTask_clarifyAlternative" name="Clarify alternative with customer" camunda:asyncAfter="true" camunda:formRef="clarifyAlternativeForm" camunda:formRefBinding="deployment">
       <bpmn:documentation>Completable two ways: a human via the deployed Camunda Form (Tasklist), or a client via POST /api/bike-leasing/{id}/clarify-alternative. The REST path is the recommended one — it routes through the domain (persisting the chosen alternative bike on the aggregate) before completing the task, so the captured data actually reaches the domain model. See "Clarify return with supplier" in cancel-bike-order.bpmn for the form-only anti-pattern where data never leaves the process.</bpmn:documentation>
@@ -127,22 +131,22 @@
           <camunda:property name="additionalOutputVariables" value="alternativeFound" />
         </camunda:properties>
       </bpmn:extensionElements>
-      <bpmn:incoming>Flow_0dbz33i</bpmn:incoming>
-      <bpmn:outgoing>Flow_1q8awsj</bpmn:outgoing>
+      <bpmn:incoming>flow_bikeUnavailable</bpmn:incoming>
+      <bpmn:outgoing>flow_clarifyToAlternativeGateway</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:exclusiveGateway id="gateway_alternativeFound" name="Alternative found?" default="Flow_162bkdk">
-      <bpmn:incoming>Flow_1q8awsj</bpmn:incoming>
-      <bpmn:outgoing>Flow_162bkdk</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0bmze33</bpmn:outgoing>
+    <bpmn:exclusiveGateway id="gateway_alternativeFound" name="Alternative found?" default="flow_alternativeFound">
+      <bpmn:incoming>flow_clarifyToAlternativeGateway</bpmn:incoming>
+      <bpmn:outgoing>flow_alternativeFound</bpmn:outgoing>
+      <bpmn:outgoing>flow_noAlternativeFound</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:exclusiveGateway id="gateway_bikeSourceJoin">
-      <bpmn:incoming>Flow_0ncgjti</bpmn:incoming>
-      <bpmn:incoming>Flow_162bkdk</bpmn:incoming>
-      <bpmn:outgoing>Flow_1oudvdg</bpmn:outgoing>
+      <bpmn:incoming>flow_forkToBikeSource</bpmn:incoming>
+      <bpmn:incoming>flow_alternativeFound</bpmn:incoming>
+      <bpmn:outgoing>flow_bikeSourceToOrder</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:intermediateThrowEvent id="event_triggerReversal" name="Trigger reversal">
-      <bpmn:incoming>Flow_0bmze33</bpmn:incoming>
-      <bpmn:outgoing>Flow_0zi701m</bpmn:outgoing>
+      <bpmn:incoming>flow_noAlternativeFound</bpmn:incoming>
+      <bpmn:outgoing>flow_reversalToContractCancelled</bpmn:outgoing>
       <bpmn:compensateEventDefinition id="CompensateEventDefinition_1acwjf2" />
     </bpmn:intermediateThrowEvent>
     <bpmn:serviceTask id="serviceTask_cancelContract" name="Cancel contract" isForCompensation="true" camunda:asyncAfter="true" camunda:type="external" camunda:topic="cancelContract" />
@@ -154,103 +158,109 @@
       </bpmn:extensionElements>
     </bpmn:callActivity>
     <bpmn:serviceTask id="serviceTask_issueInsurancePolicy" name="Issue insurance policy" camunda:asyncAfter="true" camunda:type="external" camunda:topic="issueInsurancePolicy">
-      <bpmn:incoming>Flow_0sm2h51</bpmn:incoming>
-      <bpmn:outgoing>Flow_13li8f0</bpmn:outgoing>
+      <bpmn:incoming>flow_forkToInsurance</bpmn:incoming>
+      <bpmn:outgoing>flow_insuranceToJoin</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:intermediateCatchEvent id="event_withdrawalPeriodElapsed" name="Await end of withdrawal period">
-      <bpmn:incoming>Flow_0msl1d4</bpmn:incoming>
-      <bpmn:outgoing>Flow_1czyhqn</bpmn:outgoing>
+      <bpmn:incoming>flow_handoverToWithdrawalPeriod</bpmn:incoming>
+      <bpmn:outgoing>flow_withdrawalElapsedToActive</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_0j3mkdd">
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P14D</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
-    <bpmn:boundaryEvent id="boundary_compensateContract" name="Compensate contract" attachedToRef="subProcess_concludeContract">
+    <bpmn:boundaryEvent id="event_compensateContract" name="Compensate contract" attachedToRef="subProcess_concludeContract">
       <bpmn:compensateEventDefinition id="CompensateEventDefinition_0v0vumq" />
     </bpmn:boundaryEvent>
-    <bpmn:boundaryEvent id="boundary_contractNotSigned" name="Contract not signed" attachedToRef="subProcess_concludeContract">
-      <bpmn:outgoing>Flow_0p7ddam</bpmn:outgoing>
+    <bpmn:boundaryEvent id="event_contractNotSigned" name="Contract not signed" attachedToRef="subProcess_concludeContract">
+      <bpmn:outgoing>flow_notSignedToRejection</bpmn:outgoing>
       <bpmn:escalationEventDefinition id="EscalationEventDefinition_1rt6mgy" escalationRef="Escalation_ContractNotSigned" />
     </bpmn:boundaryEvent>
-    <bpmn:boundaryEvent id="boundary_applicationInvalid" name="Application&#10;invalid" attachedToRef="serviceTask_validateApplication">
-      <bpmn:outgoing>Flow_1g1dict</bpmn:outgoing>
+    <bpmn:boundaryEvent id="event_applicationInvalid" name="Application&#10;invalid" attachedToRef="serviceTask_validateApplication">
+      <bpmn:outgoing>flow_invalidToRejection</bpmn:outgoing>
       <bpmn:errorEventDefinition id="ErrorEventDefinition_1puuwjw" errorRef="Error_ApplicationInvalid" />
     </bpmn:boundaryEvent>
-    <bpmn:boundaryEvent id="boundary_compensateInsurance" name="Compensate policy" attachedToRef="serviceTask_issueInsurancePolicy">
+    <bpmn:boundaryEvent id="event_compensateInsurance" name="Compensate policy" attachedToRef="serviceTask_issueInsurancePolicy">
       <bpmn:compensateEventDefinition id="CompensateEventDefinition_1qc5iwc" />
     </bpmn:boundaryEvent>
-    <bpmn:boundaryEvent id="boundary_compensateOrder" name="Compensate order" attachedToRef="serviceTask_orderBike">
+    <bpmn:boundaryEvent id="event_compensateOrder" name="Compensate order" attachedToRef="serviceTask_orderBike">
       <bpmn:compensateEventDefinition id="CompensateEventDefinition_1eokj6r" />
     </bpmn:boundaryEvent>
-    <bpmn:sequenceFlow id="Flow_0cq39pq" sourceRef="startEvent_leasingRequestReceived" targetRef="serviceTask_validateApplication" />
-    <bpmn:sequenceFlow id="Flow_1oudvdg" sourceRef="gateway_bikeSourceJoin" targetRef="serviceTask_orderBike" />
-    <bpmn:sequenceFlow id="Flow_0bgyqyx" sourceRef="serviceTask_orderBike" targetRef="gateway_bikeAvailable" />
-    <bpmn:sequenceFlow id="Flow_054y6af" sourceRef="serviceTask_sendRejection" targetRef="endEvent_applicationRejected" />
-    <bpmn:sequenceFlow id="Flow_0tjit66" sourceRef="gateway_join" targetRef="event_handoverReported" />
-    <bpmn:sequenceFlow id="Flow_0msl1d4" sourceRef="event_handoverReported" targetRef="event_withdrawalPeriodElapsed" />
-    <bpmn:sequenceFlow id="Flow_1czyhqn" sourceRef="event_withdrawalPeriodElapsed" targetRef="endEvent_leasingActive" />
-    <bpmn:sequenceFlow id="Flow_1g1dict" sourceRef="boundary_applicationInvalid" targetRef="serviceTask_sendRejection" />
-    <bpmn:sequenceFlow id="Flow_00bctyk" name="No" sourceRef="gateway_isSolvent" targetRef="serviceTask_sendRejection">
+    <bpmn:sequenceFlow id="flow_requestToValidation" sourceRef="startEvent_leasingRequestReceived" targetRef="serviceTask_validateApplication" />
+    <bpmn:sequenceFlow id="flow_bikeSourceToOrder" sourceRef="gateway_bikeSourceJoin" targetRef="serviceTask_orderBike" />
+    <bpmn:sequenceFlow id="flow_orderedToBikeAvailable" sourceRef="serviceTask_orderBike" targetRef="gateway_bikeAvailable" />
+    <bpmn:sequenceFlow id="flow_rejectionSent" sourceRef="serviceTask_sendRejection" targetRef="endEvent_applicationRejected" />
+    <bpmn:sequenceFlow id="flow_joinToHandover" sourceRef="gateway_join" targetRef="event_handoverReported" />
+    <bpmn:sequenceFlow id="flow_handoverToWithdrawalPeriod" sourceRef="event_handoverReported" targetRef="event_withdrawalPeriodElapsed" />
+    <bpmn:sequenceFlow id="flow_withdrawalElapsedToActive" sourceRef="event_withdrawalPeriodElapsed" targetRef="serviceTask_activateLeasing" />
+    <bpmn:serviceTask id="serviceTask_activateLeasing" name="Activate leasing" camunda:asyncAfter="true" camunda:type="external" camunda:topic="activateLeasing">
+      <bpmn:incoming>flow_withdrawalElapsedToActive</bpmn:incoming>
+      <bpmn:outgoing>flow_activateToLeasingActive</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="flow_activateToLeasingActive" sourceRef="serviceTask_activateLeasing" targetRef="endEvent_leasingActive" />
+    <bpmn:sequenceFlow id="flow_invalidToRejection" sourceRef="event_applicationInvalid" targetRef="gateway_rejectionJoin" />
+    <bpmn:sequenceFlow id="flow_notSolvent" name="No" sourceRef="gateway_isSolvent" targetRef="gateway_rejectionJoin">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!solvent}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0p7ddam" sourceRef="boundary_contractNotSigned" targetRef="serviceTask_sendRejection" />
-    <bpmn:sequenceFlow id="Flow_08ad25m" sourceRef="serviceTask_validateApplication" targetRef="businessRuleTask_checkCreditRating" />
-    <bpmn:sequenceFlow id="Flow_10dsfgr" sourceRef="businessRuleTask_checkCreditRating" targetRef="gateway_isSolvent" />
-    <bpmn:sequenceFlow id="Flow_0dj8bxx" sourceRef="gateway_isSolvent" targetRef="subProcess_concludeContract" />
-    <bpmn:sequenceFlow id="Flow_17zd4n8" sourceRef="subProcess_concludeContract" targetRef="gateway_fork" />
-    <bpmn:sequenceFlow id="Flow_0ncgjti" sourceRef="gateway_fork" targetRef="gateway_bikeSourceJoin" />
-    <bpmn:sequenceFlow id="Flow_0sm2h51" sourceRef="gateway_fork" targetRef="serviceTask_issueInsurancePolicy" />
-    <bpmn:sequenceFlow id="Flow_13li8f0" sourceRef="serviceTask_issueInsurancePolicy" targetRef="gateway_join" />
-    <bpmn:sequenceFlow id="Flow_1qm0pcr" name="Yes" sourceRef="gateway_bikeAvailable" targetRef="gateway_join" />
-    <bpmn:sequenceFlow id="Flow_0dbz33i" name="No" sourceRef="gateway_bikeAvailable" targetRef="userTask_clarifyAlternative">
+    <bpmn:sequenceFlow id="flow_notSignedToRejection" sourceRef="event_contractNotSigned" targetRef="gateway_rejectionJoin" />
+    <bpmn:sequenceFlow id="flow_rejectionJoined" sourceRef="gateway_rejectionJoin" targetRef="serviceTask_sendRejection" />
+    <bpmn:sequenceFlow id="flow_validatedToCreditCheck" sourceRef="serviceTask_validateApplication" targetRef="businessRuleTask_checkCreditRating" />
+    <bpmn:sequenceFlow id="flow_creditCheckToSolvency" sourceRef="businessRuleTask_checkCreditRating" targetRef="gateway_isSolvent" />
+    <bpmn:sequenceFlow id="flow_solvent" sourceRef="gateway_isSolvent" targetRef="subProcess_concludeContract" />
+    <bpmn:sequenceFlow id="flow_contractConcludedToFork" sourceRef="subProcess_concludeContract" targetRef="gateway_fork" />
+    <bpmn:sequenceFlow id="flow_forkToBikeSource" sourceRef="gateway_fork" targetRef="gateway_bikeSourceJoin" />
+    <bpmn:sequenceFlow id="flow_forkToInsurance" sourceRef="gateway_fork" targetRef="serviceTask_issueInsurancePolicy" />
+    <bpmn:sequenceFlow id="flow_insuranceToJoin" sourceRef="serviceTask_issueInsurancePolicy" targetRef="gateway_join" />
+    <bpmn:sequenceFlow id="flow_bikeAvailable" name="Yes" sourceRef="gateway_bikeAvailable" targetRef="gateway_join" />
+    <bpmn:sequenceFlow id="flow_bikeUnavailable" name="No" sourceRef="gateway_bikeAvailable" targetRef="userTask_clarifyAlternative">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!bikeAvailable}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1q8awsj" sourceRef="userTask_clarifyAlternative" targetRef="gateway_alternativeFound" />
-    <bpmn:sequenceFlow id="Flow_162bkdk" name="Yes" sourceRef="gateway_alternativeFound" targetRef="gateway_bikeSourceJoin" />
-    <bpmn:sequenceFlow id="Flow_0bmze33" name="No" sourceRef="gateway_alternativeFound" targetRef="event_triggerReversal">
+    <bpmn:sequenceFlow id="flow_clarifyToAlternativeGateway" sourceRef="userTask_clarifyAlternative" targetRef="gateway_alternativeFound" />
+    <bpmn:sequenceFlow id="flow_alternativeFound" name="Yes" sourceRef="gateway_alternativeFound" targetRef="gateway_bikeSourceJoin" />
+    <bpmn:sequenceFlow id="flow_noAlternativeFound" name="No" sourceRef="gateway_alternativeFound" targetRef="event_triggerReversal">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!alternativeFound}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0zi701m" sourceRef="event_triggerReversal" targetRef="endEvent_contractCancelled" />
+    <bpmn:sequenceFlow id="flow_reversalToContractCancelled" sourceRef="event_triggerReversal" targetRef="endEvent_contractCancelled" />
     <bpmn:endEvent id="endEvent_contractCancelled" name="Contract cancelled">
-      <bpmn:incoming>Flow_0zi701m</bpmn:incoming>
+      <bpmn:incoming>flow_reversalToContractCancelled</bpmn:incoming>
       <bpmn:terminateEventDefinition id="TerminateEventDefinition_04n84yk" />
     </bpmn:endEvent>
     <bpmn:subProcess id="subProcess_applicationWithdrawn" name="Application withdrawn" triggeredByEvent="true">
       <bpmn:startEvent id="startEvent_applicationWithdrawn" name="Request withdrawn" camunda:asyncAfter="true">
-        <bpmn:outgoing>E01</bpmn:outgoing>
+        <bpmn:outgoing>flow_withdrawalToReversal</bpmn:outgoing>
         <bpmn:messageEventDefinition id="Msg_AntragZurueckgezogen_d" messageRef="Message_ApplicationWithdrawn" />
       </bpmn:startEvent>
       <bpmn:intermediateThrowEvent id="event_reverseApplication" name="Reverse application">
-        <bpmn:incoming>E01</bpmn:incoming>
-        <bpmn:outgoing>E02</bpmn:outgoing>
+        <bpmn:incoming>flow_withdrawalToReversal</bpmn:incoming>
+        <bpmn:outgoing>flow_reversalToConfirmation</bpmn:outgoing>
         <bpmn:compensateEventDefinition id="CompensateEventDefinition_01xv6ab" />
       </bpmn:intermediateThrowEvent>
-      <bpmn:sequenceFlow id="E01" sourceRef="startEvent_applicationWithdrawn" targetRef="event_reverseApplication" />
-      <bpmn:sequenceFlow id="E02" sourceRef="event_reverseApplication" targetRef="serviceTask_sendCancellationConfirmation" />
-      <bpmn:sequenceFlow id="Flow_0z1vqev" sourceRef="serviceTask_sendCancellationConfirmation" targetRef="endEvent_applicationCancelled" />
+      <bpmn:sequenceFlow id="flow_withdrawalToReversal" sourceRef="startEvent_applicationWithdrawn" targetRef="event_reverseApplication" />
+      <bpmn:sequenceFlow id="flow_reversalToConfirmation" sourceRef="event_reverseApplication" targetRef="serviceTask_sendCancellationConfirmation" />
+      <bpmn:sequenceFlow id="flow_confirmationToCancelled" sourceRef="serviceTask_sendCancellationConfirmation" targetRef="endEvent_applicationCancelled" />
       <bpmn:serviceTask id="serviceTask_sendCancellationConfirmation" name="Send cancellation confirmation" camunda:asyncAfter="true" camunda:type="external" camunda:topic="sendCancellationConfirmation">
-        <bpmn:incoming>E02</bpmn:incoming>
-        <bpmn:outgoing>Flow_0z1vqev</bpmn:outgoing>
+        <bpmn:incoming>flow_reversalToConfirmation</bpmn:incoming>
+        <bpmn:outgoing>flow_confirmationToCancelled</bpmn:outgoing>
       </bpmn:serviceTask>
       <bpmn:endEvent id="endEvent_applicationCancelled" name="Leasing cancelled">
-        <bpmn:incoming>Flow_0z1vqev</bpmn:incoming>
+        <bpmn:incoming>flow_confirmationToCancelled</bpmn:incoming>
       </bpmn:endEvent>
     </bpmn:subProcess>
-    <bpmn:boundaryEvent id="boundary_signatureReminder" name="7 days" cancelActivity="false" attachedToRef="subProcess_concludeContract">
-      <bpmn:outgoing>Flow_reminder1</bpmn:outgoing>
+    <bpmn:boundaryEvent id="event_signatureReminder" name="7 days" cancelActivity="false" attachedToRef="subProcess_concludeContract">
+      <bpmn:outgoing>flow_reminderToMail</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_reminder">
         <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P7D</bpmn:timeDuration>
       </bpmn:timerEventDefinition>
     </bpmn:boundaryEvent>
     <bpmn:serviceTask id="serviceTask_sendReminderMail" name="Send reminder mail" camunda:asyncAfter="true" camunda:type="external" camunda:topic="sendReminderMail">
-      <bpmn:incoming>Flow_reminder1</bpmn:incoming>
-      <bpmn:outgoing>Flow_reminder2</bpmn:outgoing>
+      <bpmn:incoming>flow_reminderToMail</bpmn:incoming>
+      <bpmn:outgoing>flow_mailToProspectReminded</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:endEvent id="endEvent_prospectReminded" name="Prospect reminded">
-      <bpmn:incoming>Flow_reminder2</bpmn:incoming>
+      <bpmn:incoming>flow_mailToProspectReminded</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:association id="Association_0reycrf" associationDirection="One" sourceRef="boundary_compensateInsurance" targetRef="serviceTask_cancelPolicy" />
-    <bpmn:association id="Association_1q9i1wm" associationDirection="One" sourceRef="boundary_compensateContract" targetRef="serviceTask_cancelContract" />
-    <bpmn:association id="Association_185chbk" associationDirection="One" sourceRef="boundary_compensateOrder" targetRef="callActivity_cancelBikeOrder" />
+    <bpmn:association id="Association_0reycrf" associationDirection="One" sourceRef="event_compensateInsurance" targetRef="serviceTask_cancelPolicy" />
+    <bpmn:association id="Association_1q9i1wm" associationDirection="One" sourceRef="event_compensateContract" targetRef="serviceTask_cancelContract" />
+    <bpmn:association id="Association_185chbk" associationDirection="One" sourceRef="event_compensateOrder" targetRef="callActivity_cancelBikeOrder" />
   </bpmn:process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="bikeLeasingProcess">
@@ -278,10 +288,19 @@
           <dc:Bounds x="1716" y="290" width="49" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_activateLeasing_di" bpmnElement="serviceTask_activateLeasing">
+        <dc:Bounds x="1910" y="225" width="100" height="80" />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0i98fr6_di" bpmnElement="endEvent_leasingActive">
-        <dc:Bounds x="1922" y="247" width="36" height="36" />
+        <dc:Bounds x="2072" y="247" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1908" y="290" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_rejectionJoin_di" bpmnElement="gateway_rejectionJoin" isMarkerVisible="true">
+        <dc:Bounds x="685" y="445" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="674" y="502" width="73" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1qdvy1t_di" bpmnElement="serviceTask_sendRejection">
@@ -340,28 +359,28 @@
       <bpmndi:BPMNShape id="Activity_0robame_di" bpmnElement="serviceTask_sendContract">
         <dc:Bounds x="650" y="210" width="100" height="80" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_1jra6g7_di" bpmnElement="Flow_1jra6g7">
+      <bpmndi:BPMNEdge id="Flow_1jra6g7_di" bpmnElement="flow_eligibleToSendContract">
         <di:waypoint x="608" y="250" />
         <di:waypoint x="650" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0ff6219_di" bpmnElement="Flow_0ff6219">
+      <bpmndi:BPMNEdge id="Flow_0ff6219_di" bpmnElement="flow_contractSentToAwait">
         <di:waypoint x="750" y="250" />
         <di:waypoint x="775" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0ete2ij_di" bpmnElement="Flow_0ete2ij">
+      <bpmndi:BPMNEdge id="Flow_0ete2ij_di" bpmnElement="flow_awaitToSigned">
         <di:waypoint x="825" y="250" />
         <di:waypoint x="862" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0m29pj0_di" bpmnElement="Flow_0m29pj0">
+      <bpmndi:BPMNEdge id="Flow_0m29pj0_di" bpmnElement="flow_signedToContractValid">
         <di:waypoint x="898" y="250" />
         <di:waypoint x="962" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1uekrwv_di" bpmnElement="Flow_1uekrwv">
+      <bpmndi:BPMNEdge id="Flow_1uekrwv_di" bpmnElement="flow_awaitToDeadline">
         <di:waypoint x="800" y="275" />
         <di:waypoint x="800" y="340" />
         <di:waypoint x="862" y="340" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1it2fbs_di" bpmnElement="Flow_1it2fbs">
+      <bpmndi:BPMNEdge id="Flow_1it2fbs_di" bpmnElement="flow_deadlineToNotSigned">
         <di:waypoint x="898" y="340" />
         <di:waypoint x="962" y="340" />
       </bpmndi:BPMNEdge>
@@ -442,15 +461,15 @@
           <dc:Bounds x="545" y="693" width="89" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="E01_di" bpmnElement="E01">
+      <bpmndi:BPMNEdge id="E01_di" bpmnElement="flow_withdrawalToReversal">
         <di:waypoint x="286" y="670" />
         <di:waypoint x="340" y="670" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="E02_di" bpmnElement="E02">
+      <bpmndi:BPMNEdge id="E02_di" bpmnElement="flow_reversalToConfirmation">
         <di:waypoint x="376" y="670" />
         <di:waypoint x="420" y="670" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0z1vqev_di" bpmnElement="Flow_0z1vqev">
+      <bpmndi:BPMNEdge id="Flow_0z1vqev_di" bpmnElement="flow_confirmationToCancelled">
         <di:waypoint x="520" y="670" />
         <di:waypoint x="572" y="670" />
       </bpmndi:BPMNEdge>
@@ -463,125 +482,133 @@
           <dc:Bounds x="778" y="105" width="46" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_reminder_di" bpmnElement="boundary_signatureReminder">
+      <bpmndi:BPMNShape id="Event_reminder_di" bpmnElement="event_signatureReminder">
         <dc:Bounds x="572" y="140" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="572" y="183" width="33" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1udrygq_di" bpmnElement="boundary_compensateOrder">
+      <bpmndi:BPMNShape id="Event_1udrygq_di" bpmnElement="event_compensateOrder">
         <dc:Bounds x="1242" y="362" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1188" y="398" width="63" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_06zqvrx_di" bpmnElement="boundary_compensateInsurance">
+      <bpmndi:BPMNShape id="Event_06zqvrx_di" bpmnElement="event_compensateInsurance">
         <dc:Bounds x="1222" y="122" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1168" y="106" width="63" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_165tf2h_di" bpmnElement="boundary_applicationInvalid">
+      <bpmndi:BPMNShape id="Event_165tf2h_di" bpmnElement="event_applicationInvalid">
         <dc:Bounds x="192" y="272" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="223" y="316" width="54" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0xb7poa_di" bpmnElement="boundary_contractNotSigned">
+      <bpmndi:BPMNShape id="Event_0xb7poa_di" bpmnElement="event_contractNotSigned">
         <dc:Bounds x="632" y="380" width="36" height="36" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="655" y="421" width="73" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0w2fnun_di" bpmnElement="boundary_compensateContract">
+      <bpmndi:BPMNShape id="Event_0w2fnun_di" bpmnElement="event_compensateContract">
         <dc:Bounds x="862" y="140" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_reminder1_di" bpmnElement="Flow_reminder1">
+      <bpmndi:BPMNEdge id="Flow_reminder1_di" bpmnElement="flow_reminderToMail">
         <di:waypoint x="590" y="140" />
         <di:waypoint x="590" y="80" />
         <di:waypoint x="650" y="80" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_reminder2_di" bpmnElement="Flow_reminder2">
+      <bpmndi:BPMNEdge id="Flow_reminder2_di" bpmnElement="flow_mailToProspectReminded">
         <di:waypoint x="750" y="80" />
         <di:waypoint x="782" y="80" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0cq39pq_di" bpmnElement="Flow_0cq39pq">
+      <bpmndi:BPMNEdge id="Flow_0cq39pq_di" bpmnElement="flow_requestToValidation">
         <di:waypoint x="108" y="250" />
         <di:waypoint x="160" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1oudvdg_di" bpmnElement="Flow_1oudvdg">
+      <bpmndi:BPMNEdge id="Flow_1oudvdg_di" bpmnElement="flow_bikeSourceToOrder">
         <di:waypoint x="1155" y="340" />
         <di:waypoint x="1190" y="340" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0bgyqyx_di" bpmnElement="Flow_0bgyqyx">
+      <bpmndi:BPMNEdge id="Flow_0bgyqyx_di" bpmnElement="flow_orderedToBikeAvailable">
         <di:waypoint x="1290" y="340" />
         <di:waypoint x="1405" y="340" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_054y6af_di" bpmnElement="Flow_054y6af">
+      <bpmndi:BPMNEdge id="Flow_054y6af_di" bpmnElement="flow_rejectionSent">
         <di:waypoint x="860" y="470" />
         <di:waypoint x="962" y="470" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0tjit66_di" bpmnElement="Flow_0tjit66">
+      <bpmndi:BPMNEdge id="Flow_0tjit66_di" bpmnElement="flow_joinToHandover">
         <di:waypoint x="1655" y="265" />
         <di:waypoint x="1722" y="265" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0msl1d4_di" bpmnElement="Flow_0msl1d4">
+      <bpmndi:BPMNEdge id="Flow_0msl1d4_di" bpmnElement="flow_handoverToWithdrawalPeriod">
         <di:waypoint x="1758" y="265" />
         <di:waypoint x="1832" y="265" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1czyhqn_di" bpmnElement="Flow_1czyhqn">
+      <bpmndi:BPMNEdge id="Flow_1czyhqn_di" bpmnElement="flow_withdrawalElapsedToActive">
         <di:waypoint x="1868" y="265" />
-        <di:waypoint x="1922" y="265" />
+        <di:waypoint x="1910" y="265" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1g1dict_di" bpmnElement="Flow_1g1dict">
+      <bpmndi:BPMNEdge id="flow_activateToLeasingActive_di" bpmnElement="flow_activateToLeasingActive">
+        <di:waypoint x="2010" y="265" />
+        <di:waypoint x="2072" y="265" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1g1dict_di" bpmnElement="flow_invalidToRejection">
         <di:waypoint x="210" y="308" />
         <di:waypoint x="210" y="470" />
-        <di:waypoint x="760" y="470" />
+        <di:waypoint x="685" y="470" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_00bctyk_di" bpmnElement="Flow_00bctyk">
+      <bpmndi:BPMNEdge id="Flow_00bctyk_di" bpmnElement="flow_notSolvent">
         <di:waypoint x="463" y="275" />
         <di:waypoint x="463" y="470" />
-        <di:waypoint x="760" y="470" />
+        <di:waypoint x="685" y="470" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="471" y="283" width="15" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0p7ddam_di" bpmnElement="Flow_0p7ddam">
+      <bpmndi:BPMNEdge id="Flow_0p7ddam_di" bpmnElement="flow_notSignedToRejection">
         <di:waypoint x="650" y="416" />
         <di:waypoint x="650" y="470" />
+        <di:waypoint x="685" y="470" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_rejectionJoined_di" bpmnElement="flow_rejectionJoined">
+        <di:waypoint x="735" y="470" />
         <di:waypoint x="760" y="470" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_08ad25m_di" bpmnElement="Flow_08ad25m">
+      <bpmndi:BPMNEdge id="Flow_08ad25m_di" bpmnElement="flow_validatedToCreditCheck">
         <di:waypoint x="260" y="250" />
         <di:waypoint x="300" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_10dsfgr_di" bpmnElement="Flow_10dsfgr">
+      <bpmndi:BPMNEdge id="Flow_10dsfgr_di" bpmnElement="flow_creditCheckToSolvency">
         <di:waypoint x="400" y="250" />
         <di:waypoint x="438" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0dj8bxx_di" bpmnElement="Flow_0dj8bxx">
+      <bpmndi:BPMNEdge id="Flow_0dj8bxx_di" bpmnElement="flow_solvent">
         <di:waypoint x="488" y="250" />
         <di:waypoint x="530" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_17zd4n8_di" bpmnElement="Flow_17zd4n8">
+      <bpmndi:BPMNEdge id="Flow_17zd4n8_di" bpmnElement="flow_contractConcludedToFork">
         <di:waypoint x="1040" y="250" />
         <di:waypoint x="1105" y="250" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0ncgjti_di" bpmnElement="Flow_0ncgjti">
+      <bpmndi:BPMNEdge id="Flow_0ncgjti_di" bpmnElement="flow_forkToBikeSource">
         <di:waypoint x="1130" y="275" />
         <di:waypoint x="1130" y="315" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0sm2h51_di" bpmnElement="Flow_0sm2h51">
+      <bpmndi:BPMNEdge id="Flow_0sm2h51_di" bpmnElement="flow_forkToInsurance">
         <di:waypoint x="1130" y="225" />
         <di:waypoint x="1130" y="180" />
         <di:waypoint x="1190" y="180" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_13li8f0_di" bpmnElement="Flow_13li8f0">
+      <bpmndi:BPMNEdge id="Flow_13li8f0_di" bpmnElement="flow_insuranceToJoin">
         <di:waypoint x="1290" y="180" />
         <di:waypoint x="1630" y="180" />
         <di:waypoint x="1630" y="240" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1qm0pcr_di" bpmnElement="Flow_1qm0pcr">
+      <bpmndi:BPMNEdge id="Flow_1qm0pcr_di" bpmnElement="flow_bikeAvailable">
         <di:waypoint x="1455" y="340" />
         <di:waypoint x="1630" y="340" />
         <di:waypoint x="1630" y="290" />
@@ -589,7 +616,7 @@
           <dc:Bounds x="1534" y="322" width="18" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0dbz33i_di" bpmnElement="Flow_0dbz33i">
+      <bpmndi:BPMNEdge id="Flow_0dbz33i_di" bpmnElement="flow_bikeUnavailable">
         <di:waypoint x="1430" y="365" />
         <di:waypoint x="1430" y="450" />
         <di:waypoint x="1470" y="450" />
@@ -597,11 +624,11 @@
           <dc:Bounds x="1442" y="393" width="15" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1q8awsj_di" bpmnElement="Flow_1q8awsj">
+      <bpmndi:BPMNEdge id="Flow_1q8awsj_di" bpmnElement="flow_clarifyToAlternativeGateway">
         <di:waypoint x="1570" y="450" />
         <di:waypoint x="1605" y="450" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_162bkdk_di" bpmnElement="Flow_162bkdk">
+      <bpmndi:BPMNEdge id="Flow_162bkdk_di" bpmnElement="flow_alternativeFound">
         <di:waypoint x="1630" y="475" />
         <di:waypoint x="1630" y="540" />
         <di:waypoint x="1130" y="540" />
@@ -610,14 +637,14 @@
           <dc:Bounds x="1641" y="503" width="18" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0bmze33_di" bpmnElement="Flow_0bmze33">
+      <bpmndi:BPMNEdge id="Flow_0bmze33_di" bpmnElement="flow_noAlternativeFound">
         <di:waypoint x="1655" y="450" />
         <di:waypoint x="1722" y="450" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="1672" y="433" width="15" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0zi701m_di" bpmnElement="Flow_0zi701m">
+      <bpmndi:BPMNEdge id="Flow_0zi701m_di" bpmnElement="flow_reversalToContractCancelled">
         <di:waypoint x="1758" y="450" />
         <di:waypoint x="1832" y="450" />
       </bpmndi:BPMNEdge>

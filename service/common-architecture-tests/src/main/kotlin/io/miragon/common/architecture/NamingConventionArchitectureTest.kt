@@ -85,6 +85,7 @@ abstract class NamingConventionArchitectureTest(
                         AllowedSuffix("Dto", "REST response type outside the domain model"),
                         AllowedSuffix("Input", "REST request type"),
                         AllowedSuffix("Mapper", "translates between REST DTOs and domain types"),
+                        AllowedSuffix("Configuration", "Spring web configuration for the REST adapter (CORS, OpenAPI metadata, error handling)"),
                     ),
             )
         }

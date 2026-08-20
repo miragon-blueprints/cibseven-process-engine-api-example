@@ -21,7 +21,6 @@ data class LeasingApplication(
     val contractId: ContractId? = null,
 ) {
 
-    /** Ensures the application is fundamentally processable; throws otherwise. */
     fun validate(): LeasingApplication {
         if (monthlyNetIncome <= 0.0) {
             throw ApplicationInvalidException(id, "monthly net income must be greater than zero")
@@ -29,19 +28,20 @@ data class LeasingApplication(
         return this
     }
 
-    /** Records the contract the contract system issued for this application. */
     fun withContract(contractId: ContractId): LeasingApplication =
         copy(contractId = contractId)
 
-    /** Records the placed order on the application and moves it to ORDERED. */
     fun documentOrder(orderId: OrderId): LeasingApplication =
         copy(orderId = orderId, status = LeasingStatus.ORDERED)
 
-    /** Records that the customer accepted a different bike after the requested one was unavailable. */
     fun selectAlternative(bikeId: BikeId): LeasingApplication =
         copy(bikeId = bikeId)
 
+    fun reportHandover(): LeasingApplication = copy(status = LeasingStatus.HANDED_OVER)
+
     fun activate(): LeasingApplication = copy(status = LeasingStatus.ACTIVE)
+
+    fun withdraw(): LeasingApplication = copy(status = LeasingStatus.WITHDRAWN)
 
     fun reject(): LeasingApplication = copy(status = LeasingStatus.REJECTED)
 

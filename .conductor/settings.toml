@@ -3,9 +3,13 @@
 [scripts]
 run_mode = "nonconcurrent"
 
-# One-time setup per workspace: install BPMN linting tooling.
+# This stack binds fixed ports (Postgres 5432, backend 8080), so only one workspace can run the app
+# at a time — hence run_mode = "nonconcurrent". See docs/adr/0006-fixed-ports-for-v1-portless-as-the-upgrade.md.
+
+# One-time setup per workspace: install BPMN linting tooling (root package.json) + git hooks.
 setup = """
-npm --prefix tools ci
+npm ci
+npm run hooks:install
 """
 
 # Tear down the local Postgres container when a workspace is archived.

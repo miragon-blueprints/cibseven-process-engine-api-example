@@ -24,7 +24,7 @@ class ValidateApplicationWorker(
         try {
             useCase.validate(ApplicationId.of(applicationId))
         } catch (e: ApplicationInvalidException) {
-            throw BpmnErrorOccurred(e.reason, Errors.`APPLICATION INVALID`.code, emptyMap())
+            throw BpmnErrorOccurred(e.reason, Errors.APPLICATION_INVALID.code, emptyMap())
         }
     }
 }

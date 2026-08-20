@@ -6,6 +6,7 @@ import io.miragon.blueprint.application.port.inbound.SubmitLeasingRequestUseCase
 import io.miragon.blueprint.domain.bike.BikeId
 import io.miragon.blueprint.domain.leasing.CustomerName
 import io.miragon.blueprint.domain.leasing.Email
+import io.swagger.v3.oas.annotations.Operation
 import mu.KotlinLogging
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
@@ -21,6 +22,7 @@ class SubmitLeasingRequestController(
 
     private val log = KotlinLogging.logger {}
 
+    @Operation(operationId = "submitLeasingRequest")
     @PostMapping
     fun submit(@RequestBody input: LeasingRequestInput): ResponseEntity<LeasingApplicationCreatedDto> {
         log.debug { "Received leasing request: $input" }

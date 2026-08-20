@@ -9,7 +9,9 @@ import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 class SendCancellationConfirmationServiceTest {
@@ -19,21 +21,23 @@ class SendCancellationConfirmationServiceTest {
     private val underTest = SendCancellationConfirmationService(repository = repository, notification = notification)
 
     @Test
-    fun `sendCancellationConfirmation loads the application and confirms the cancellation`() {
+    fun `sendCancellationConfirmation confirms to the customer and marks the application cancelled`() {
 
         // given: an application in the repository
         val application = testLeasingApplication()
         every { repository.findById(application.id) } returns application
         every { notification.send(any(), application) } just Runs
-        every { repository.save(any()) } answers { firstArg() }
+        val saved = slot<io.miragon.blueprint.domain.leasing.LeasingApplication>()
+        every { repository.save(capture(saved)) } answers { saved.captured }
 
         // when: the cancellation confirmation is sent
         underTest.sendCancellationConfirmation(application.id)
 
-        // then: the application is loaded, the customer is informed, and the status is persisted
+        // then: the customer is informed and the application is moved to CANCELLED
         verify { repository.findById(application.id) }
         verify { notification.send(any(), application) }
-        verify { repository.save(match { it.status == LeasingStatus.CANCELLED }) }
+        verify { repository.save(any()) }
+        assertThat(saved.captured.status).isEqualTo(LeasingStatus.CANCELLED)
         confirmVerified(repository, notification)
     }
 }

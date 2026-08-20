@@ -1,0 +1,23 @@
+meta {
+  name: Resolve the clarification with an available bike
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}/clarify-alternative
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "alternativeFound": true,
+    "bikeId": "BIKE-900",
+    "bikeModel": "Gravel Explorer 900"
+  }
+}
+
+assert {
+  res.status: eq 202
+}
