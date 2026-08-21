@@ -11,8 +11,9 @@ get {
 }
 
 script:pre-request {
-  // Wait for the handover message's async continuation to reach the withdrawal-period timer.
-  await new Promise((resolve) => setTimeout(resolve, 2500));
+  const pid = bru.getVar('processInstanceId');
+  await pollEngine(`/job?processInstanceId=${pid}&activityId=event_withdrawalPeriodElapsed&timers=true`,
+    (b) => Array.isArray(b) && b.length >= 1);
 }
 
 assert {

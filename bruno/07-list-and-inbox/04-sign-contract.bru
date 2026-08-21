@@ -11,8 +11,8 @@ post {
 }
 
 script:pre-request {
-  // Give the engine a moment to reach the "wait for signature" state after submission.
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/bike-leasing/${id}`, (b, s) => s === 200 && b && b.contractId != null);
 }
 
 assert {

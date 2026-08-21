@@ -11,8 +11,8 @@ get {
 }
 
 script:pre-request {
-  // Let the rejection's async continuation settle before reading the status.
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/bike-leasing/${id}`, (b, s) => s === 200 && b && b.status === "REJECTED");
 }
 
 assert {

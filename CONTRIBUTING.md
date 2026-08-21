@@ -39,7 +39,7 @@ Under Conductor the ports are fixed and the workspace runs `nonconcurrent` (see
 Drive the running app with the Bruno API scenarios:
 
 ```bash
-cd bruno && npx --yes @usebruno/cli run . --env local -r
+cd bruno && npx --yes @usebruno/cli@4.0.0 run . --env local -r
 ```
 
 They start a case over the domain REST endpoints, complete user tasks and fire timer jobs via the

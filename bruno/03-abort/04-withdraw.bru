@@ -11,9 +11,8 @@ post {
 }
 
 script:pre-request {
-  // Wait for the bike order (and insurance/contract) to complete, so they get compensated by the
-  // saga rollback when the application is withdrawn.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/bike-leasing/${id}`, (b, s) => s === 200 && b && b.status === "ORDERED" && b.orderId != null);
 }
 
 assert {

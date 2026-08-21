@@ -11,9 +11,8 @@ post {
 }
 
 script:pre-request {
-  // Wait for the async continuations (order bike + issue insurance, then join) to reach the
-  // "handover reported" wait state.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/bike-leasing/${id}`, (b, s) => s === 200 && b && b.status === "ORDERED" && b.orderId != null);
 }
 
 assert {

@@ -10,8 +10,9 @@ get {
 }
 
 script:pre-request {
-  // Wait for the clarification to be completed and the task to leave the inbox.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/tasks/clarify-alternative`,
+    (b, s) => s === 200 && Array.isArray(b) && !b.some((t) => t.applicationId === id));
 }
 
 assert {
