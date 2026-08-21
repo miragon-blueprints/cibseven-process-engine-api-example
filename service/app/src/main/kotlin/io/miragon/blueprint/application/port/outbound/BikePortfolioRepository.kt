@@ -11,4 +11,13 @@ interface BikePortfolioRepository {
     fun save(bike: Bike): Bike
 
     fun findByBikeId(bikeId: BikeId): Bike?
+
+    /** The whole catalogue — backs the `GET /api/bikes` picker. */
+    fun findAll(): List<Bike>
+
+    /**
+     * Batch lookup of the given bikes. Used to resolve models for a page of applications in a single
+     * query instead of one per row, so list endpoints don't teach an N+1.
+     */
+    fun findAllByIds(bikeIds: List<BikeId>): List<Bike>
 }

@@ -13,6 +13,6 @@ get {
 assert {
   res.status: eq 200
   res.body.applicationId: eq {{applicationId}}
-  res.body.status: eq ORDERED
+  res.body.status: eq ACTIVE
   res.body.bikeModel: eq Gravel Explorer 900
 }

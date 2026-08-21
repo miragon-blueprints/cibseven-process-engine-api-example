@@ -1,0 +1,26 @@
+meta {
+  name: List received applications and find ours
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/api/bike-leasing?status=RECEIVED&size=50
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.items: isDefined
+}
+
+tests {
+  test("the list is paged", function () {
+    expect(res.getBody()).to.have.property("totalElements");
+    expect(res.getBody()).to.have.property("page");
+  });
+  test("our application appears in the received list", function () {
+    const found = res.getBody().items.some((i) => i.applicationId === bru.getVar("applicationId"));
+    expect(found).to.equal(true);
+  });
+}

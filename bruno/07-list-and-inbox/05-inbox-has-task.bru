@@ -1,0 +1,32 @@
+meta {
+  name: The inbox lists our parked clarification
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/api/tasks/clarify-alternative
+  auth: none
+}
+
+script:pre-request {
+  // Wait for the order to run, find BIKE-OOS unavailable, and park on the clarify-alternative task.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("our application is waiting for clarification", function () {
+    const mine = res.getBody().find((t) => t.applicationId === bru.getVar("applicationId"));
+    expect(mine).to.not.equal(undefined);
+    expect(mine.requestedBikeId).to.equal("BIKE-OOS");
+  });
+  test("the inbox never exposes an engine task id", function () {
+    for (const task of res.getBody()) {
+      expect(task).to.not.have.property("taskId");
+    }
+  });
+}

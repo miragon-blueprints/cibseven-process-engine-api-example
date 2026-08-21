@@ -10,6 +10,13 @@ get {
   auth: none
 }
 
+script:pre-request {
+  // The withdrawal timer's continuation flows through the async external `serviceTask_activateLeasing`
+  // (a @ProcessEngineWorker flips the read model to ACTIVE) before reaching the leasing-active end
+  // event. Give the worker its polling window to drain that task.
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+}
+
 assert {
   res.status: eq 200
   res.body: length 1

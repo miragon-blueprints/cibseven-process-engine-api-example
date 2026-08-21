@@ -74,50 +74,50 @@ object CancelBikeOrderProcessApi {
    * Worker code typically does not need these.
    */
   object Flows {
-    val FLOW_0510_WB_5: BpmnFlow = BpmnFlow(
-          id = "Flow_0510wb5",
-          sourceRef = "startEvent_cancellationRequired",
-          targetRef = "serviceTask_requestCancellation",
+    val FLOW_BOOK_COSTS_TO_JOIN: BpmnFlow = BpmnFlow(
+          id = "flow_bookCostsToJoin",
+          sourceRef = "serviceTask_bookCosts",
+          targetRef = "gateway_join",
         )
 
-    val FLOW_0_GKP_33_W: BpmnFlow = BpmnFlow(
-          id = "Flow_0gkp33w",
-          sourceRef = "userTask_clarifyReturn",
-          targetRef = "serviceTask_bookCosts",
-        )
-
-    val FLOW_0_TC_4_YFK: BpmnFlow = BpmnFlow(
-          id = "Flow_0tc4yfk",
-          sourceRef = "serviceTask_requestCancellation",
-          targetRef = "gateway_cancellationPossible",
-        )
-
-    val FLOW_0_W_76_X_5_F: BpmnFlow = BpmnFlow(
-          id = "Flow_0w76x5f",
-          sourceRef = "gateway_join",
-          targetRef = "endEvent_orderReversed",
-        )
-
-    val FLOW_1_A_0_G_4_V_1: BpmnFlow = BpmnFlow(
-          id = "Flow_1a0g4v1",
+    val FLOW_CANCELLATION_NOT_POSSIBLE: BpmnFlow = BpmnFlow(
+          id = "flow_cancellationNotPossible",
           name = "No",
           sourceRef = "gateway_cancellationPossible",
           targetRef = "userTask_clarifyReturn",
           condition = $$"""${cancellationPossible}""",
         )
 
-    val FLOW_1_E_8_KS_1_K: BpmnFlow = BpmnFlow(
-          id = "Flow_1e8ks1k",
+    val FLOW_CANCELLATION_POSSIBLE: BpmnFlow = BpmnFlow(
+          id = "flow_cancellationPossible",
           name = "Yes",
           sourceRef = "gateway_cancellationPossible",
           targetRef = "gateway_join",
           isDefault = true,
         )
 
-    val FLOW_1_V_5_TEJ_2: BpmnFlow = BpmnFlow(
-          id = "Flow_1v5tej2",
-          sourceRef = "serviceTask_bookCosts",
-          targetRef = "gateway_join",
+    val FLOW_CLARIFY_TO_BOOK_COSTS: BpmnFlow = BpmnFlow(
+          id = "flow_clarifyToBookCosts",
+          sourceRef = "userTask_clarifyReturn",
+          targetRef = "serviceTask_bookCosts",
+        )
+
+    val FLOW_JOIN_TO_REVERSED: BpmnFlow = BpmnFlow(
+          id = "flow_joinToReversed",
+          sourceRef = "gateway_join",
+          targetRef = "endEvent_orderReversed",
+        )
+
+    val FLOW_REQUEST_TO_POSSIBLE_GATEWAY: BpmnFlow = BpmnFlow(
+          id = "flow_requestToPossibleGateway",
+          sourceRef = "serviceTask_requestCancellation",
+          targetRef = "gateway_cancellationPossible",
+        )
+
+    val FLOW_REQUIRED_TO_REQUEST: BpmnFlow = BpmnFlow(
+          id = "flow_requiredToRequest",
+          sourceRef = "startEvent_cancellationRequired",
+          targetRef = "serviceTask_requestCancellation",
         )
   }
 

@@ -1,0 +1,20 @@
+meta {
+  name: Sign the contract so the order finds the bike unavailable
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}/sign-contract
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  // Give the engine a moment to reach the "wait for signature" state after submission.
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+}
+
+assert {
+  res.status: eq 202
+}

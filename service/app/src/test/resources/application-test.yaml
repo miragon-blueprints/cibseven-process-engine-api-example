@@ -2,6 +2,9 @@ spring:
   main:
     web-application-type: none
     allow-bean-definition-overriding: true
+  flyway:
+    # The tests build the schema with Hibernate create-drop on H2; Flyway (Postgres migrations) is off.
+    enabled: false
   autoconfigure:
     # The engine-rest (Jersey) API needs a servlet web context, which the process
     # tests don't start (web-application-type: none). It is only needed at runtime.

@@ -2,7 +2,9 @@ package io.miragon.blueprint.adapter.inbound.rest
 
 import com.ninjasquad.springmockk.MockkBean
 import io.miragon.blueprint.application.port.inbound.GetLeasingApplicationQuery
+import io.miragon.blueprint.domain.bike.OrderId
 import io.miragon.blueprint.domain.leasing.ApplicationId
+import io.miragon.blueprint.domain.leasing.ContractId
 import io.miragon.blueprint.domain.leasing.testLeasingApplication
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -24,22 +26,50 @@ class GetLeasingApplicationControllerTest {
     private lateinit var query: GetLeasingApplicationQuery
 
     @Test
-    fun `returns the application with its resolved bike model when it exists`() {
+    fun `returns the application with all of its fields mapped when it exists`() {
 
-        // given: an application the query can find, with its bike model resolved from the portfolio
-        val application = testLeasingApplication()
+        // given: a fully-populated application (incl. order and contract) the query can find
+        val application = testLeasingApplication(
+            orderId = OrderId("ORDER-42"),
+            contractId = ContractId("CONTRACT-7"),
+        )
         every { query.byId(application.id) } returns GetLeasingApplicationQuery.Result(application, "Gravel Explorer 900")
         val operation = get("/api/bike-leasing/{applicationId}", application.id.value.toString())
 
         // when: the request is performed
         val response = mockMvc.perform(operation).andReturn()
 
-        // then: the response is 200 with the application's id, status and resolved bike model
+        // then: the response is 200 and every DTO field is mapped from the domain object
         assertThat(response.response.status).isEqualTo(200)
-        assertThat(response.response.contentAsString)
-            .contains(application.id.value.toString(), "RECEIVED", "Gravel Explorer 900")
+        assertThat(response.response.contentAsString).contains(
+            application.id.value.toString(),
+            application.customerName.value,
+            application.email.value,
+            application.bikeId.value,
+            "Gravel Explorer 900",
+            "RECEIVED",
+            "ORDER-42",
+            "CONTRACT-7",
+        )
         verify { query.byId(application.id) }
         confirmVerified(query)
+    }
+
+    @Test
+    fun `maps a not-yet-ordered application with null order and contract`() {
+
+        // given: an application still without an order or contract (both nullable fields absent)
+        val application = testLeasingApplication(orderId = null, contractId = null)
+        every { query.byId(application.id) } returns GetLeasingApplicationQuery.Result(application, null)
+        val operation = get("/api/bike-leasing/{applicationId}", application.id.value.toString())
+
+        // when: the request is performed
+        val response = mockMvc.perform(operation).andReturn()
+
+        // then: the response is 200 and the nullable fields are serialised as null
+        assertThat(response.response.status).isEqualTo(200)
+        assertThat(response.response.contentAsString)
+            .contains("\"orderId\":null", "\"contractId\":null", "\"bikeModel\":null")
     }
 
     @Test

@@ -1,0 +1,25 @@
+meta {
+  name: List the bike catalogue
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/bikes
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("catalogue contains the three seeded bikes", function () {
+    const ids = res.getBody().map((b) => b.bikeId);
+    expect(ids).to.include.members(["BIKE-900", "BIKE-800", "BIKE-OOS"]);
+  });
+  test("BIKE-OOS is offered but marked unavailable", function () {
+    const oos = res.getBody().find((b) => b.bikeId === "BIKE-OOS");
+    expect(oos.available).to.equal(false);
+  });
+}

@@ -3,16 +3,22 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/bikeleasing
-    username: admin
-    password: admin
+    # Overridable via SPRING_DATASOURCE_* env vars for containerized/remote runs; the defaults target
+    # the local dev Postgres (stack/docker-compose.yml). See CONTRIBUTING.md "Run it in containers".
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bikeleasing}
+    username: ${SPRING_DATASOURCE_USERNAME:admin}
+    password: ${SPRING_DATASOURCE_PASSWORD:admin}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create
+      # Flyway owns the application schema (resources/db/migration); Hibernate only validates against it.
+      ddl-auto: validate
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  mvc:
+    problemdetails:
+      enabled: true
 
 # process-engine-api (bpm-crafters): runs the cib-seven-embedded adapter, which polls external
 # service tasks / user tasks on a schedule and hands them to the @ProcessEngineWorker beans and the
@@ -34,6 +40,32 @@ dev:
           user-tasks:
             delivery-strategy: embedded_scheduled
             schedule-delivery-fixed-rate-in-seconds: 1
+
+# A minimal, deploy/ops-ready surface. Everything else stays disabled.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      # Component detail is hidden. To expose it, set: show-details: always
+      show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  # Keep the engine-internal /engine-rest API out of the generated contract; only expose /api/**.
+  paths-to-match: /api/**
 
 camunda:
   bpm:
