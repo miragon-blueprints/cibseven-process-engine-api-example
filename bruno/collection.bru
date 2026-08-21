@@ -1,0 +1,47 @@
+script:pre-request {
+  // Shared eventual-consistency polling helpers (see ADR-0012). Budgets are
+  // env-driven: pollTimeoutMs / pollIntervalMs.
+  const axios = require('axios');
+
+  const timeoutDefault = Number(bru.getEnvVar('pollTimeoutMs') || 20000);
+  const intervalDefault = Number(bru.getEnvVar('pollIntervalMs') || 500);
+
+  globalThis.pollUntil = async function (config, predicate, opts) {
+    opts = opts || {};
+    const timeoutMs = Number(opts.timeoutMs != null ? opts.timeoutMs : timeoutDefault);
+    const intervalMs = Number(opts.intervalMs != null ? opts.intervalMs : intervalDefault);
+    const deadline = Date.now() + timeoutMs;
+    let attempts = 0;
+    let last;
+    for (;;) {
+      attempts++;
+      try {
+        last = await axios(Object.assign({ validateStatus: () => true }, config));
+        if (predicate(last.data, last.status)) return last;
+      } catch (err) {
+        last = { status: 0, data: null, error: err.message };
+      }
+      if (Date.now() >= deadline) {
+        const where = (config.method || 'get').toUpperCase() + ' ' + config.url;
+        console.log('pollUntil: condition not met after ' + attempts + ' attempt(s) / '
+          + timeoutMs + 'ms (' + where + ', last status ' + (last && last.status) + ')');
+        return last;
+      }
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+  };
+
+  // GET {{baseUrl}}{path} until predicate(data, status) holds.
+  globalThis.pollApp = function (path, predicate, opts) {
+    return globalThis.pollUntil(
+      { method: 'get', url: bru.getEnvVar('baseUrl') + path },
+      predicate, opts);
+  };
+
+  // GET {{engineRest}}{path} (CIB seven engine REST) until predicate(data, status) holds.
+  globalThis.pollEngine = function (path, predicate, opts) {
+    return globalThis.pollUntil(
+      { method: 'get', url: bru.getEnvVar('engineRest') + path },
+      predicate, opts);
+  };
+}

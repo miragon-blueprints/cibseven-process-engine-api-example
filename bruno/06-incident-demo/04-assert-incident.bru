@@ -11,10 +11,9 @@ get {
 }
 
 script:pre-request {
-  // The order task is an external task; when the dealer "outage" fails it, the cib-seven-embedded
-  // adapter retries it 3 times (its default retry policy) on the delivery poll before raising the
-  // incident. Wait out the (short) retry window so the incident exists by the time we query.
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  const pid = bru.getVar('processInstanceId');
+  await pollEngine(`/incident?processInstanceId=${pid}&incidentType=failedExternalTask`,
+    (b) => Array.isArray(b) && b.length >= 1, { timeoutMs: 30000 });
 }
 
 assert {

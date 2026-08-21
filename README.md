@@ -126,7 +126,7 @@ npm ci && npm run lint:bpmn
 
 # 4. drive the scenarios (build + arch + process tests first, then the REST flows)
 ./gradlew build
-cd bruno && npx @usebruno/cli run . --env local -r
+cd bruno && npx --yes @usebruno/cli@4.0.0 run . --env local -r
 ```
 
 Prefer containers? `./gradlew :service:app:bootBuildImage` builds an OCI image

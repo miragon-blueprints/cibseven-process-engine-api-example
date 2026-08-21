@@ -135,7 +135,7 @@ jobs:
 
       - name: Run Bruno scenarios
         working-directory: bruno
-        run: npx --yes @usebruno/cli run . --env local -r
+        run: npx --yes @usebruno/cli@4.0.0 run . --env local -r
 
       - name: Dump application log on failure
         if: failure()

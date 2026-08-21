@@ -11,8 +11,9 @@ post {
 }
 
 script:pre-request {
-  // Wait for the order to find the requested bike unavailable and park on the clarify-alternative user task.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/tasks/clarify-alternative`,
+    (b, s) => s === 200 && Array.isArray(b) && b.some((t) => t.applicationId === id));
 }
 
 body:json {

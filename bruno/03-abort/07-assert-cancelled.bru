@@ -11,8 +11,9 @@ get {
 }
 
 script:pre-request {
-  // Completing the task drives the remaining compensation + confirmation asynchronously to the end.
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const pid = bru.getVar('processInstanceId');
+  await pollEngine(`/history/activity-instance?processInstanceId=${pid}&activityId=endEvent_applicationCancelled`,
+    (b) => Array.isArray(b) && b.length >= 1);
 }
 
 assert {
