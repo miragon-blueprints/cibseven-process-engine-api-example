@@ -9,6 +9,15 @@ import org.junit.jupiter.api.Test
 class LeasingApplicationTest {
 
     @Test
+    fun `exposes the applicant's age and monthly net income`() {
+        // given: an application built with a specific age and income
+        val application = testLeasingApplication(age = 40, monthlyNetIncome = 4200.0)
+        // then: both fields are exposed unchanged
+        assertThat(application.age).isEqualTo(40)
+        assertThat(application.monthlyNetIncome).isEqualTo(4200.0)
+    }
+
+    @Test
     fun `documentOrder attaches the order id and moves to ORDERED`() {
         // given: a received application
         val application = testLeasingApplication(status = LeasingStatus.RECEIVED)

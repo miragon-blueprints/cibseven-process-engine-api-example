@@ -53,4 +53,29 @@ class SelectAlternativeControllerTest {
         }
         confirmVerified(useCase)
     }
+
+    @Test
+    fun `client reports that no alternative was found`() {
+
+        // given: a decision body with no alternative and no bike details
+        val pathVar = "123e4567-e89b-12d3-a456-426614174000"
+        val body = mapOf("alternativeFound" to false)
+        every { useCase.selectAlternative(any()) } just Runs
+        val operation =
+            post("/api/bike-leasing/{applicationId}/clarify-alternative", pathVar)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(body))
+
+        // when: the request is performed
+        val response = mockMvc.perform(operation).andReturn()
+
+        // then: the use case is invoked with a command carrying no alternative bike and the response is 202
+        assertThat(response.response.status).isEqualTo(202)
+        verify {
+            useCase.selectAlternative(
+                SelectAlternativeUseCase.Command(ApplicationId.of(pathVar), alternativeFound = false, bikeId = null, bikeModel = null),
+            )
+        }
+        confirmVerified(useCase)
+    }
 }
