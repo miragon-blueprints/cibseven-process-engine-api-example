@@ -1,7 +1,7 @@
 # 0002 — Hexagonal architecture for the backend
 
 - **Status:** Accepted
-- **Date:** 2026-08-18
+- **Date:** 2026-10-05
 
 ## Context
 
@@ -16,7 +16,7 @@ quietly erode it.
 
 We structure `service/app` as a **hexagon (ports & adapters)** under `io.miragon.blueprint`:
 
-- `domain/` — pure Kotlin value objects and aggregates; no framework imports.
+- `domain/` — pure Java value objects and aggregates (records); no framework imports.
 - `application/port/inbound` — one **`*UseCase`** (state-changing) or **`*Query`** (read) interface per
   operation. `application/port/outbound` — **`*Repository` / `*Port` / `*Process`** interfaces.
 - `application/service` — one `*Service` implementing exactly one inbound port; it may not call another
@@ -27,8 +27,9 @@ We structure `service/app` as a **hexagon (ports & adapters)** under `io.miragon
 - `adapter/process` — the **generated** `*ProcessApi` (bpmn-to-code) plus engine config; a technical
   seam that fits neither side of the split.
 
-These rules are **enforced by the reusable ArchUnit + Konsist suite** in
-`service/common-architecture-tests`, wired into every module's tests so `./gradlew build` fails on a
+These rules are **enforced by the reusable ArchUnit + JavaParser suite**
+([ADR-0014](0014-two-architecture-test-tools-archunit-and-javaparser.md)) in
+`service/common-architecture-tests`, wired into every module's tests so `./mvnw verify` fails on a
 violation:
 
 - `HexagonalArchitectureTest` — the layered-dependency graph (domain depends on nothing; ports are

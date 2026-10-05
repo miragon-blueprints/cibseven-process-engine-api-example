@@ -11,14 +11,14 @@ cd cibseven-process-engine-api-example
 npm ci && npm run hooks:install                                # BPMN lint + git hooks
 ```
 
-You need **JDK 21**, **Node ≥ 22.12** (for the BPMN lint tooling), and **Docker (or Podman)** for
-Postgres.
+You need **JDK 21** (Maven itself comes with the `./mvnw` wrapper), **Node ≥ 22.12** (for the BPMN
+lint tooling), and **Docker (or Podman)** for Postgres.
 
 Run the app locally:
 
 ```bash
 docker compose -f stack/docker-compose.yml up -d   # Postgres
-./gradlew :service:app:bootRun                      # backend + embedded engine on :8080
+./mvnw -pl service/app -am spring-boot:run          # backend + embedded engine on :8080
 ```
 
 ### Ports
@@ -57,18 +57,19 @@ is in [ADR-0011](docs/adr/0011-build-and-deployment-approach.md).
 
 ```bash
 # 1. build the OCI image (Spring buildpacks — no Dockerfile). Produces cibseven-process-engine-api-example/app:1.0-SNAPSHOT
-./gradlew :service:app:bootBuildImage
+./mvnw -pl service/app -am -DskipTests package spring-boot:build-image-no-fork
 
 # 2. bring up Postgres
 docker compose -f stack/docker-compose.yml up -d
 ```
 
-**Podman:** `bootBuildImage` needs a Docker-API socket. Expose podman's and point the build at it:
+**Podman:** the buildpack build (`spring-boot:build-image-no-fork`) needs a Docker-API socket. Expose
+podman's and point the build at it:
 
 ```bash
 podman system service --time=0 unix:///tmp/podman.sock &
 export DOCKER_HOST=unix:///tmp/podman.sock
-./gradlew :service:app:bootBuildImage
+./mvnw -pl service/app -am -DskipTests package spring-boot:build-image-no-fork
 ```
 
 **Configuration.** `application.yaml` ships dev defaults; the deploy-relevant values are read from the
@@ -88,10 +89,11 @@ environment (they win over the baked defaults):
 ## Scripts
 
 ```bash
-# backend
-./gradlew build                         # arch + unit + process + model validation + spec export
-./gradlew :service:app:pitest           # mutation score >= 80
-./gradlew generateBpmnModels            # regenerate the typed process API after editing a .bpmn
+# backend (from the repo root; -pl service/app -am targets the app and builds the arch-test module with it)
+./mvnw verify                                                     # arch + unit + process + model validation + spec export
+./mvnw -pl service/app -am test -Dtest='*FooTest' -Dsurefire.failIfNoSpecifiedTests=false   # one test class
+./mvnw -pl service/app -am test-compile pitest:mutationCoverage   # mutation score >= 80 (report: service/app/target/pit-reports)
+./mvnw -pl service/app generate-sources                           # regenerate the typed process API after editing a .bpmn
 
 # BPMN (tooling at repo root)
 npm ci && npm run lint:bpmn             # bpmnlint the .bpmn models
@@ -107,7 +109,7 @@ npm ci && npm run lint:bpmn             # bpmnlint the .bpmn models
 - **Conventional Commits.** Commit messages and PR titles follow
   [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
   `refactor:`, `test:`, `chore:`). Write everything in **English**.
-- **Keep the gates green.** The architecture (ArchUnit + Konsist), contract-drift and mutation (≥ 80)
+- **Keep the gates green.** The architecture (ArchUnit + JavaParser), contract-drift and mutation (≥ 80)
   gates run in CI on every PR. They are fitness functions, not style guides — a violation fails the
   build. The mutation gate is **diff-scoped** on PRs (only the classes you changed); the full-module
   gate-80 sweep runs nightly.
@@ -126,10 +128,10 @@ npm ci && npm run lint:bpmn             # bpmnlint the .bpmn models
 ## Before opening a PR
 
 ```bash
-./gradlew build
-git diff --exit-code openapi/openapi.json    # the API contract must not drift
-./gradlew :service:app:pitest                # mutation score >= 80
-npm ci && npm run lint:bpmn                   # the BPMN models lint clean
+./mvnw verify
+git diff --exit-code openapi/openapi.json                         # the API contract must not drift
+./mvnw -pl service/app -am test-compile pitest:mutationCoverage   # mutation score >= 80
+npm ci && npm run lint:bpmn                                       # the BPMN models lint clean
 ```
 
 All of these run in CI on every pull request (JDK 21 / Node ≥ 22.12).

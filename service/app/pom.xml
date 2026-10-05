@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.miragon.blueprint</groupId>
+        <artifactId>cibseven-process-engine-api-example</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>app</artifactId>
+    <packaging>jar</packaging>
+
+    <properties>
+        <!-- PIT scope. Defaults to the whole code base; the diff-scoped PR job narrows it with
+             `-DmutationTargetClasses=a.b.C*,d.e.F*` (comma-separated globs). -->
+        <mutationTargetClasses>io.miragon.blueprint.*</mutationTargetClasses>
+        <!-- No `pitest.threads` property here on purpose: a POM property would be interpolated into the PIT
+             configuration before build-helper's `cpu-count` (bound to `initialize`) can set it at runtime.
+             So run PIT behind a lifecycle phase (`test-compile pitest:mutationCoverage`) or pass
+             `-Dpitest.threads=N`. -->
+    </properties>
+
+    <dependencies>
+        <!-- web, devtools, actuator + Prometheus -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!-- Observability — actuator probes (health/liveness/readiness, info, metrics) and a Prometheus registry -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <!-- version pinned by the Spring Boot BOM -->
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- database -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- The embedded CIB seven engine still ships the webapp (Cockpit/Tasklist) and the `/engine-rest`
+             API used by the Bruno e2e scenarios; the process-engine-api layer is added on top of it. -->
+        <dependency>
+            <groupId>org.cibseven.bpm.springboot</groupId>
+            <artifactId>cibseven-bpm-spring-boot-starter-webapp-4</artifactId>
+            <exclusions>
+                <!-- CIB seven 2.2.0 pulls in both the generic `cibseven-webclient-web` and the Spring-Boot-4
+                     variant `cibseven-webclient-web-spring-boot-4`. The generic one calls
+                     PathMatchConfigurer.setUseSuffixPatternMatch(...), which was removed in Spring 7 / Spring
+                     Boot 4, and crashes the app on start-up. Drop it so only the SB4 variant remains.
+                     Maven has no global exclude: this is the only dependency that drags it in, verify with
+                     `./mvnw -pl service/app -am test-compile dependency:tree
+                     -Dincludes=org.cibseven.webapp:cibseven-webclient-web` (must print nothing), and add the
+                     same exclusion to any new dependency that does. -->
+                <exclusion>
+                    <groupId>org.cibseven.webapp</groupId>
+                    <artifactId>cibseven-webclient-web</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.cibseven.bpm.springboot</groupId>
+            <artifactId>cibseven-bpm-spring-boot-starter-rest-4</artifactId>
+        </dependency>
+
+        <!-- process-engine-api: the abstraction used to drive the engine (start/correlate/complete) and to
+             implement the BPMN service tasks as `@ProcessEngineWorker` beans consuming external tasks. -->
+        <dependency>
+            <groupId>dev.bpm-crafters.process-engine-api</groupId>
+            <artifactId>process-engine-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.bpm-crafters.process-engine-adapters</groupId>
+            <artifactId>process-engine-adapter-cib-seven-embedded-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.bpm-crafters.process-engine-worker</groupId>
+            <artifactId>process-engine-worker-spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.miragon</groupId>
+            <artifactId>bpmn-to-code-runtime</artifactId>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- Required by pitest-junit5-plugin 1.2.x, which no longer bundles it. Surefire brings its own
+                 copy. Version from the Spring Boot BOM. -->
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- process tests (CIB seven assert + JUnit 5, h2) -->
+        <dependency>
+            <groupId>org.cibseven.bpm</groupId>
+            <artifactId>cibseven-bpm-assert</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.cibseven.bpm</groupId>
+            <artifactId>cibseven-bpm-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- `runtime`, not `test`: CIB seven's webclient (cibseven-webclient-core) already puts h2 on the
+                 runtime classpath, and a direct test-scoped declaration would narrow it (in Maven the direct
+                 scope wins) and drop it from the boot jar. -->
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- JGiven: no test uses JGiven yet; kept so scenario tests can be added without touching the
+             build. -->
+        <dependency>
+            <groupId>org.cibseven.community</groupId>
+            <artifactId>cibseven-bpm-jgiven</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.jgiven</groupId>
+            <artifactId>jgiven-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.miragon</groupId>
+            <artifactId>bpmn-to-code-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.miragon.blueprint</groupId>
+            <artifactId>common-architecture-tests</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Generates the typed `*ProcessApi` classes (element ids, messages, timers, variables, …) from
+                 the BPMN models, so workers and tests reference process elements as compile-checked
+                 constants. -->
+            <plugin>
+                <groupId>io.miragon</groupId>
+                <artifactId>bpmn-to-code-maven</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-bpmn-api</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-bpmn-api</goal>
+                        </goals>
+                        <configuration>
+                            <baseDir>${project.basedir}</baseDir>
+                            <filePattern>src/main/resources/bpmn/*.bpmn</filePattern>
+                            <outputFolderPath>${project.basedir}/src/main/java</outputFolderPath>
+                            <packagePath>io.miragon.blueprint.adapter.process</packagePath>
+                            <outputLanguage>JAVA</outputLanguage>
+                            <processEngine>CAMUNDA_7</processEngine>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- META-INF/build-info.properties for the actuator `info` endpoint. -->
+                        <id>build-info</id>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                        <configuration>
+                            <!-- The real build time, not the fixed reproducible-build timestamp the plugin
+                                 would otherwise use (`project.build.outputTimestamp`). -->
+                            <time>${maven.build.timestamp}</time>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- OCI image for the backend, built by Spring's Cloud Native Buildpacks integration — no
+                         Dockerfile to maintain (layered, non-root by default). See docs/adr/0011 and the "Run it
+                         in containers" section of CONTRIBUTING.md. Build with
+                         `./mvnw -pl service/app -am -DskipTests package spring-boot:build-image-no-fork`. -->
+                    <image>
+                        <name>cibseven-process-engine-api-example/app:${project.version}</name>
+                        <env>
+                            <!-- Pin the JVM the buildpack installs to the version the code targets. -->
+                            <BP_JVM_VERSION>21</BP_JVM_VERSION>
+                        </env>
+                    </image>
+                </configuration>
+            </plugin>
+
+            <!-- One JVM per test class: the process tests and the Spring contexts must not share a JVM. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkCount>1</forkCount>
+                    <reuseForks>false</reuseForks>
+                </configuration>
+            </plugin>
+
+            <!-- Number of available processors → ${pitest.threads}, used by PIT below. -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>cpu-count</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>cpu-count</goal>
+                        </goals>
+                        <configuration>
+                            <cpuCount>pitest.threads</cpuCount>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Mutation testing (gate 80): `./mvnw -pl service/app -am test-compile pitest:mutationCoverage`
+                 (report: target/pit-reports). See docs/adr/0004. -->
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <configuration>
+                    <targetClasses>${mutationTargetClasses}</targetClasses>
+                    <targetTests>
+                        <param>io.miragon.blueprint.*</param>
+                    </targetTests>
+                    <failWhenNoMutations>false</failWhenNoMutations>
+                    <excludedClasses>
+                        <param>io.miragon.blueprint.adapter.process.*ProcessApi*</param>
+                        <param>io.miragon.blueprint.adapter.process.HistoryCleanupConfiguration*</param>
+                        <param>io.miragon.blueprint.adapter.process.EngineApiConfiguration*</param>
+                        <param>io.miragon.blueprint.CibsevenBikeLeasingApplication*</param>
+                        <param>io.miragon.blueprint.BikeCatalogueSeeder*</param>
+                        <param>io.miragon.blueprint.adapter.inbound.rest.DevCorsConfiguration*</param>
+                        <param>io.miragon.blueprint.adapter.inbound.rest.OpenApiConfiguration*</param>
+                        <!-- External-task worker beans are thin @ProcessEngineWorker adapters exercised by the
+                             process tests, which mutation testing excludes. -->
+                        <param>io.miragon.blueprint.adapter.inbound.cibseven.*</param>
+                    </excludedClasses>
+                    <excludedTestClasses>
+                        <param>io.miragon.blueprint.process.*</param>
+                        <param>io.miragon.blueprint.architecture.*</param>
+                    </excludedTestClasses>
+                    <threads>${pitest.threads}</threads>
+                    <timeoutFactor>2.0</timeoutFactor>
+                    <avoidCallsTo>
+                        <avoidCallsTo>org.slf4j</avoidCallsTo>
+                    </avoidCallsTo>
+                    <mutators>
+                        <mutator>DEFAULTS</mutator>
+                    </mutators>
+                    <outputFormats>
+                        <outputFormat>HTML</outputFormat>
+                        <outputFormat>XML</outputFormat>
+                    </outputFormats>
+                    <timestampedReports>false</timestampedReports>
+                    <mutationThreshold>80</mutationThreshold>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

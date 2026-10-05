@@ -1,7 +1,7 @@
 # 0010 — Flyway for database schema migrations
 
 - **Status:** Accepted
-- **Date:** 2026-08-20
+- **Date:** 2026-10-05
 
 ## Context
 
@@ -24,7 +24,7 @@ We use **[Flyway](https://flywaydb.org/)** as the owner of the application schem
 to **`ddl-auto: validate`** — Hibernate now only checks that the mapped entities match the migrated
 schema and never creates or drops a table.
 
-- **Dependencies** (`gradle/libs.versions.toml`, `database` bundle):
+- **Dependencies** (`service/app/pom.xml`, `database` block):
   **`spring-boot-starter-flyway`** + `flyway-database-postgresql`. The starter is required, not raw
   `flyway-core`: Spring Boot 4 modularised the Flyway autoconfiguration out of
   `spring-boot-autoconfigure`, so `flyway-core` alone puts Flyway on the classpath but never wires it
@@ -41,7 +41,7 @@ schema and never creates or drops a table.
 - **Tests keep Flyway off.** The `test` profile runs on in-memory H2 with Hibernate building the
   schema (`ddl-auto: create-drop`); `spring.flyway.enabled: false` in `application-test.yaml` stops the
   Postgres-flavoured baseline from running against H2. The migrations are therefore exercised by the
-  real-Postgres paths — local `bootRun` and the Bruno API-scenario CI job.
+  real-Postgres paths — local `spring-boot:run` and the Bruno API-scenario CI job.
 
 The how-to (adding a migration, the one-time reset of an old dev DB) is in
 [CONTRIBUTING.md](../../CONTRIBUTING.md).

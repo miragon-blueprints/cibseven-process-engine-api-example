@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Spring Boot 4 line: the parent manages the Spring Boot BOM and the shared
+         plugin defaults (compiler `-parameters`, surefire, spring-boot-maven-plugin). Keep it in step with the
+         `spring-boot.version` property below. -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.0</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>io.miragon.blueprint</groupId>
+    <artifactId>cibseven-process-engine-api-example</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>service/common-architecture-tests</module>
+        <module>service/app</module>
+    </modules>
+
+    <!-- All dependency and plugin versions of the build, in one place (see docs/adr/0008 and 0013). -->
+    <properties>
+        <java.version>21</java.version>
+        <!-- Must equal the parent version above; re-imported first in <dependencyManagement> (see there). -->
+        <spring-boot.version>4.1.0</spring-boot.version>
+
+        <!-- Overrides the kotlin-bom version the Spring Boot parent manages. The code base is Java, but
+             the process-engine-api / worker / adapter and bpmn-to-code libraries are written in Kotlin
+             and need kotlin-stdlib (+ kotlin-reflect) at runtime; this keeps them on the 2.4 line instead
+             of the older Kotlin version Spring Boot manages. -->
+        <kotlin.version>2.4.0</kotlin.version>
+
+        <!-- CIB seven (Camunda 7 fork) — Spring Boot 4 starters -->
+        <cib7.version>2.2.0</cib7.version>
+
+        <!-- process-engine-api (bpm-crafters) — the abstraction layer used to talk to the engine
+             (start/correlate/complete via APIs, and @ProcessEngineWorker beans for the service tasks) -->
+        <process-engine-api.version>1.7</process-engine-api.version>
+        <process-engine-worker.version>0.8.4</process-engine-worker.version>
+        <process-engine-adapter-cib7.version>2026.07.1</process-engine-adapter-cib7.version>
+
+        <!-- OpenAPI — 3.x = the Spring Boot 4 line; 3.1.0 is built against SB 4.1.0 -->
+        <springdoc.version>3.1.0</springdoc.version>
+
+        <!-- BPMN-to-code (generates the typed process API from the *.bpmn models; testing = model
+             validation). The Maven plugin and the runtime share one version. -->
+        <bpmn-to-code.version>3.1.0</bpmn-to-code.version>
+        <bpmn-to-code-testing.version>5.1.0</bpmn-to-code-testing.version>
+
+        <!-- Architecture tests: ArchUnit for the bytecode rules, JavaParser for the source rules
+             (replaces Konsist, which only reads Kotlin) -->
+        <archunit.version>1.4.2</archunit.version>
+        <javaparser.version>3.28.2</javaparser.version>
+
+        <!-- PostgreSQL JDBC driver, pinned ahead of the version Spring Boot manages (42.7.11 in 4.1.0). Used by the
+             explicit <dependencyManagement> entry below, so Dependabot sees and bumps it; drop the pin once Boot
+             manages this version or newer. H2 is left to Spring Boot. -->
+        <postgresql.version>42.7.12</postgresql.version>
+
+        <!-- JGiven — CIB seven -->
+        <cib7-jgiven.version>2.1.0</cib7-jgiven.version>
+        <jgiven.version>2.0.3</jgiven.version>
+
+        <!-- Highest-version pins for transitive dependencies (see <dependencyManagement>) -->
+        <kotlin-logging-jvm.version>8.0.4</kotlin-logging-jvm.version>
+        <swagger-annotations.version>2.2.52</swagger-annotations.version>
+        <angus-activation.version>2.0.3</angus-activation.version>
+        <error-prone-annotations.version>2.41.0</error-prone-annotations.version>
+
+        <!-- Mutation testing (pitest-maven + the JUnit 5 plugin), gate 80 — see docs/adr/0004 -->
+        <pitest.version>1.22.1</pitest.version>
+        <pitest-junit5-plugin.version>1.2.2</pitest-junit5-plugin.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Import order matters: Maven resolves BOM imports first-wins.
+                 1. kotlin-bom: the explicit Spring Boot BOM import below would otherwise pin the Kotlin runtime to
+                    Spring Boot's own kotlin.version (2.3.21) — the ${kotlin.version} override above only reaches the
+                    inherited, not the imported copy of the Boot BOM.
+                 2. spring-boot-dependencies, re-imported *before* the process-engine-adapter BOM: the adapter BOM
+                    itself imports spring-boot-dependencies 4.0.7, so without this everything Spring Boot manages
+                    through nested BOMs (Micrometer, Spring Data, Mockito, Prometheus, ...) would silently drop to
+                    the 4.0.7 versions.
+                 3. the process-engine-adapter BOM. -->
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-bom</artifactId>
+                <version>${kotlin.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- The process-engine-adapter BOM aligns the process-engine-api / adapter / worker versions. -->
+            <dependency>
+                <groupId>dev.bpm-crafters.process-engine-adapters</groupId>
+                <artifactId>process-engine-adapter-cib-seven-bom</artifactId>
+                <version>${process-engine-adapter-cib7.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- CIB seven (Camunda 7 fork) — Spring Boot 4 starters -->
+            <dependency>
+                <groupId>org.cibseven.bpm.springboot</groupId>
+                <artifactId>cibseven-bpm-spring-boot-starter-webapp-4</artifactId>
+                <version>${cib7.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.cibseven.bpm.springboot</groupId>
+                <artifactId>cibseven-bpm-spring-boot-starter-rest-4</artifactId>
+                <version>${cib7.version}</version>
+            </dependency>
+
+            <!-- process-engine-api (bpm-crafters) -->
+            <dependency>
+                <groupId>dev.bpm-crafters.process-engine-api</groupId>
+                <artifactId>process-engine-api</artifactId>
+                <version>${process-engine-api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.bpm-crafters.process-engine-worker</groupId>
+                <artifactId>process-engine-worker-spring-boot-starter</artifactId>
+                <version>${process-engine-worker.version}</version>
+            </dependency>
+
+            <!-- OpenAPI — springdoc generates the contract served at /v3/api-docs and the Swagger UI -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+
+            <!-- BPMN-to-code -->
+            <dependency>
+                <groupId>io.miragon</groupId>
+                <artifactId>bpmn-to-code-runtime</artifactId>
+                <version>${bpmn-to-code.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.miragon</groupId>
+                <artifactId>bpmn-to-code-testing</artifactId>
+                <version>${bpmn-to-code-testing.version}</version>
+            </dependency>
+
+            <!-- Architecture tests -->
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit</artifactId>
+                <version>${archunit.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.javaparser</groupId>
+                <artifactId>javaparser-core</artifactId>
+                <version>${javaparser.version}</version>
+            </dependency>
+
+            <!-- Process test — CIB seven -->
+            <dependency>
+                <groupId>org.cibseven.bpm</groupId>
+                <artifactId>cibseven-bpm-assert</artifactId>
+                <version>${cib7.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.cibseven.bpm</groupId>
+                <artifactId>cibseven-bpm-junit5</artifactId>
+                <version>${cib7.version}</version>
+            </dependency>
+
+            <!-- JGiven — CIB seven -->
+            <dependency>
+                <groupId>org.cibseven.community</groupId>
+                <artifactId>cibseven-bpm-jgiven</artifactId>
+                <version>${cib7-jgiven.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.jgiven</groupId>
+                <artifactId>jgiven-junit5</artifactId>
+                <version>${jgiven.version}</version>
+            </dependency>
+
+            <!-- PostgreSQL JDBC driver: an explicit entry wins over the imported BOMs (see the property). -->
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
+            </dependency>
+
+            <!-- Highest-version pins. Maven resolves a version conflict to the nearest declaration, which
+                 here would be the older version. These transitive dependencies are requested in several
+                 versions; pin the highest one, the version their newest consumer was built against.
+                 Re-check all four against `./mvnw -pl service/app -am test-compile dependency:tree -Dverbose`
+                 whenever Spring Boot, the process-engine-adapter BOM, springdoc or JGiven is bumped. -->
+            <dependency>
+                <!-- 8.0.4: process-engine-api 1.7, process-engine-worker 0.8.4, bpmn-to-code-testing 5.1.0;
+                     7.0.13 (nearest): process-engine-adapter-cib-seven-embedded 2026.07.1 -->
+                <groupId>io.github.oshai</groupId>
+                <artifactId>kotlin-logging-jvm</artifactId>
+                <version>${kotlin-logging-jvm.version}</version>
+            </dependency>
+            <dependency>
+                <!-- 2.2.52: swagger-core-jakarta of springdoc 3.1.0; 2.2.36 (nearest): cibseven-webclient-core -->
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>${swagger-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <!-- 2.0.3: requested by jaxb-core 4.0.9 (Hibernate 7.4 / CIB seven); 2.0.2: managed by jaxb-bom 4.0.5,
+                     which arrives through the process-engine-adapter BOM's import chain -->
+                <groupId>org.eclipse.angus</groupId>
+                <artifactId>angus-activation</artifactId>
+                <version>${angus-activation.version}</version>
+            </dependency>
+            <dependency>
+                <!-- 2.41.0: gson 2.13.2; 2.36.0 (nearest): guava 33.4.8 — both via JGiven (test only) -->
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${error-prone-annotations.version}</version>
+            </dependency>
+
+            <!-- Reactor module -->
+            <dependency>
+                <groupId>io.miragon.blueprint</groupId>
+                <artifactId>common-architecture-tests</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.miragon</groupId>
+                    <artifactId>bpmn-to-code-maven</artifactId>
+                    <version>${bpmn-to-code.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.pitest</groupId>
+                    <artifactId>pitest-maven</artifactId>
+                    <version>${pitest.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.pitest</groupId>
+                            <artifactId>pitest-junit5-plugin</artifactId>
+                            <version>${pitest-junit5-plugin.version}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-wrapper-plugin</artifactId>
+                    <version>3.3.4</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <!-- The aggregator has no application: let `spring-boot:run` / `spring-boot:build-image` /
+                 `pitest:mutationCoverage` run from the repo root (with `-pl service/app -am`) without
+                 tripping over this pom-packaged project. Not inherited by the modules. -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

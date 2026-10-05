@@ -1,12 +1,9 @@
 .claude/logs/
-.gradle
-**/build/
+**/target/
 **/bin/
-!gradle/wrapper/gradle-wrapper.jar
 **/jgiven-reports/
 .idea
 *.iml
-.kotlin/
 .DS_Store
 .vscode
 .context

@@ -1,7 +1,7 @@
 # 0009 — Actuator probes and Prometheus metrics
 
 - **Status:** Accepted
-- **Date:** 2026-08-20
+- **Date:** 2026-10-05
 
 ## Context
 
@@ -13,12 +13,12 @@ plus a Micrometer registry — so the cost/benefit is clearly in favour. The ope
 
 ## Decision
 
-We add **`spring-boot-starter-actuator` + `micrometer-registry-prometheus`** (via the
-`defaultService` bundle in `gradle/libs.versions.toml`) and expose a **minimal, documented set** in
+We add **`spring-boot-starter-actuator` + `micrometer-registry-prometheus`** (declared in
+`service/app/pom.xml`, versions from the Spring Boot BOM) and expose a **minimal, documented set** in
 `application.yaml`: `health`, `info`, `metrics`, `prometheus`. Health **liveness/readiness groups**
 are enabled (`management.endpoint.health.probes.enabled=true`), giving `/actuator/health/liveness`
-and `/actuator/health/readiness` for orchestration. `springBoot { buildInfo() }` populates
-`/actuator/info`.
+and `/actuator/health/readiness` for orchestration. The `spring-boot-maven-plugin` `build-info` goal
+populates `/actuator/info`.
 
 We **do not** add a custom engine health contributor: the engine shares the Spring datasource, which
 actuator's built-in `db` indicator already covers. We set **`show-details: never`** because this

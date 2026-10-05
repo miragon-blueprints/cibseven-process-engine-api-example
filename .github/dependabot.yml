@@ -9,8 +9,8 @@ multi-ecosystem-groups:
 
 updates:
 
-  # Backend dependencies (Gradle + the Postgres image in the dev stack) grouped into one PR
-  - package-ecosystem: "gradle"
+  # Backend dependencies (Maven + the Postgres image in the dev stack) grouped into one PR
+  - package-ecosystem: "maven"
     directory: "/"
     patterns:
       - "*"

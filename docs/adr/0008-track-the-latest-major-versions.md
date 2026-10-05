@@ -1,13 +1,13 @@
 # 0008 — Deliberately track the latest major versions
 
 - **Status:** Accepted
-- **Date:** 2026-08-20
+- **Date:** 2026-10-05
 
 ## Context
 
-The stack sits on the newest major of nearly everything at once — Spring Boot 4 and Kotlin 2.x on the
-CIB seven Spring-Boot-4 line. That is a real choice with a real cost: newest majors have smaller
-ecosystems, more breaking-change churn, and occasionally force an integration workaround (e.g.
+The stack sits on the newest major of nearly everything at once — Spring Boot 4 on the CIB seven
+Spring-Boot-4 line. That is a real choice with a real cost: newest majors have smaller ecosystems,
+more breaking-change churn, and occasionally force an integration workaround (e.g.
 excluding the non-SB4 CIB seven webclient so the app starts on Spring 7). A fork left untouched for
 months may need an upgrade pass before it builds again.
 
