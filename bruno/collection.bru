@@ -44,4 +44,13 @@ script:pre-request {
       { method: 'get', url: bru.getEnvVar('engineRest') + path },
       predicate, opts);
   };
+
+  // Wait until the instance with this business key (the application id) has an open subscription for
+  // messageName, i.e. the token really sits in the wait state a message command correlates to. The read
+  // model runs ahead of the token: workers write it before their async continuation moves the token on.
+  globalThis.pollMessageSubscription = function (businessKey, messageName, opts) {
+    return globalThis.pollEngine(
+      `/execution?businessKey=${businessKey}&messageEventSubscriptionName=${messageName}`,
+      (b) => Array.isArray(b) && b.length >= 1, opts);
+  };
 }

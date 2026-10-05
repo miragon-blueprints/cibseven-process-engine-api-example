@@ -1,7 +1,7 @@
 # 0012 — Poll for eventual consistency in end-to-end tests
 
 - **Status:** Accepted
-- **Date:** 2026-08-21
+- **Date:** 2026-10-05
 
 ## Context
 
@@ -26,8 +26,9 @@ never by sleeping a guessed duration.
 
 - **Shared helpers** live in `bruno/collection.bru` (a collection-level `script:pre-request`, so they
   are in scope for every request): `pollUntil(config, predicate, opts)` and the convenience wrappers
-  `pollApp(path, predicate)` (GET the app read model) and `pollEngine(path, predicate)` (GET the
-  CIB seven engine REST API). They return the instant the predicate is met and only wait the full
+  `pollApp(path, predicate)` (GET the app read model), `pollEngine(path, predicate)` (GET the
+  CIB seven engine REST API) and `pollMessageSubscription(businessKey, messageName)` (wait until the
+  instance has an open subscription for that message). They return the instant the predicate is met and only wait the full
   budget when something is genuinely wrong — at which point the request's own assertions report the
   real, still-wrong state instead of a bare timeout.
 - **Budgets are env-driven** (`pollTimeoutMs` / `pollIntervalMs` in the environment file), so a sibling
@@ -36,9 +37,10 @@ never by sleeping a guessed duration.
 - **Each scenario polls for its own precondition or assertion**, mirroring the read model's observable
   fields — the `status` enum (`RECEIVED → ORDERED → HANDED_OVER → ACTIVE`, plus `WITHDRAWN`,
   `REJECTED`, `CANCELLED`) and worker-set fields (`contractId`, `orderId`). Command steps gate on the
-  precondition that makes the command valid (e.g. `contractId != null` before `sign-contract`;
-  `status == "ORDERED"` before `report-handover`; the inbox listing the item before completing the
-  `clarify-alternative` user task). Read/assert steps poll the engine REST query (a timer job, a task,
+  precondition that makes the command valid: the read-model state first (`contractId != null` before
+  `sign-contract`; `status == "ORDERED"` before `report-handover`; the inbox listing the item before
+  completing the `clarify-alternative` user task), and for message commands additionally the open
+  message subscription (`pollMessageSubscription`), because the read model runs ahead of the token. Read/assert steps poll the engine REST query (a timer job, a task,
   a history activity instance) until the resource the step asserts on exists.
 - **Division of labour holds:** Bruno asserts the **synchronous request/response contract** (status
   codes, DTO shape); genuinely engine-level, deterministic checks (timer fast-forward, full token
@@ -68,8 +70,13 @@ never by sleeping a guessed duration.
   helpers use. Helpers are attached to `globalThis` in the collection script so request-level scripts
   can call them.
 - Message commands correlate by the global `correlationKey` (the application id). A command sent before
-  the wait state is open surfaces the engine's `MismatchingMessageCorrelationException` as a `409`, so
-  gating on the read-model precondition (rather than exact timing) is what keeps the `202` valid.
+  the wait state is open surfaces the engine's `MismatchingMessageCorrelationException` as a `409`. The
+  read-model precondition alone is not enough: `contractId` and `ORDERED` are written by the
+  `sendContract` / `orderBike` workers *before* their `asyncAfter` continuation (and, for the handover,
+  the parallel join) moves the token into the catch event, so a fast client can still hit the `409`.
+  `sign-contract` and `report-handover` therefore also wait for the open subscription
+  (`GET /engine-rest/execution?businessKey=…&messageEventSubscriptionName=…`). `withdraw` needs no such
+  gate: its message start event sits in an event sub-process that is subscribed for the whole instance.
   `clarify-alternative` completes a user task resolved from the delivery pool, hence gating on the
   inbox listing the item.
 - **Deferred, not adopted:** a test-only endpoint exposing the engine's last-processed job/command

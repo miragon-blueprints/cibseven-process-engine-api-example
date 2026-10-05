@@ -13,6 +13,7 @@ post {
 script:pre-request {
   const id = bru.getVar('applicationId');
   await pollApp(`/api/bike-leasing/${id}`, (b, s) => s === 200 && b && b.status === "ORDERED" && b.orderId != null);
+  await pollMessageSubscription(id, 'miravelo.handoverReported');
 }
 
 assert {
