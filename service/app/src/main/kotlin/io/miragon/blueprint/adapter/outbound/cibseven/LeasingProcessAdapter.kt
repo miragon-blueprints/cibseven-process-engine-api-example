@@ -9,9 +9,8 @@ import dev.bpmcrafters.processengineapi.process.StartProcessByMessageCmd
 import dev.bpmcrafters.processengineapi.task.CompleteTaskCmd
 import dev.bpmcrafters.processengineapi.task.UserTaskCompletionApi
 import dev.bpmcrafters.processengineapi.task.support.UserTaskSupport
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Messages
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Variables
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
+import io.miragon.blueprint.adapter.process.Messages
 import io.miragon.blueprint.application.port.outbound.LeasingProcess
 import io.miragon.blueprint.domain.bike.BikeId
 import io.miragon.blueprint.domain.leasing.ApplicationId
@@ -38,7 +37,7 @@ class LeasingProcessAdapter(
 ) : LeasingProcess {
 
     override fun submitRequest(application: LeasingApplication) {
-        val start = Variables.StartEventLeasingRequestReceived
+        val start = FlowNodes.StartEventLeasingRequestReceived.Variables
         val key = application.id.value.toString()
         startProcessApi.startProcess(
             cmd = StartProcessByMessageCmd(
@@ -99,9 +98,9 @@ class LeasingProcessAdapter(
     ) {
         val taskId = awaitClarifyAlternativeTaskId(id)
         val variables = buildMap<String, Any?> {
-            put(Variables.UserTaskClarifyAlternative.ALTERNATIVE_FOUND.value, alternativeFound)
+            put(FlowNodes.UserTaskClarifyAlternative.Variables.ALTERNATIVE_FOUND.value, alternativeFound)
             // The re-order reads the same start-injected bike variable, so reuse its name.
-            bikeId?.let { put(Variables.StartEventLeasingRequestReceived.BIKE_ID.value, it.value) }
+            bikeId?.let { put(FlowNodes.StartEventLeasingRequestReceived.Variables.BIKE_ID.value, it.value) }
         }
         userTaskCompletionApi.completeTask(CompleteTaskCmd(taskId, variables)).join()
     }
@@ -112,10 +111,10 @@ class LeasingProcessAdapter(
      */
     private fun awaitClarifyAlternativeTaskId(id: ApplicationId): String {
         val applicationId = id.value.toString()
-        val applicationIdKey = Variables.StartEventLeasingRequestReceived.APPLICATION_ID.value
+        val applicationIdKey = FlowNodes.StartEventLeasingRequestReceived.Variables.APPLICATION_ID.value
         repeat(TASK_LOOKUP_ATTEMPTS) {
             userTaskSupport.getAllTasks()
-                .filter { it.meta[CommonRestrictions.ACTIVITY_ID] == Elements.USER_TASK_CLARIFY_ALTERNATIVE.value }
+                .filter { it.meta[CommonRestrictions.ACTIVITY_ID] == FlowNodes.UserTaskClarifyAlternative.id.value }
                 .firstOrNull { task ->
                     runCatching { userTaskSupport.getPayload(task.taskId)[applicationIdKey] == applicationId }
                         .getOrDefault(false)
@@ -123,7 +122,7 @@ class LeasingProcessAdapter(
                 ?.let { return it.taskId }
             Thread.sleep(TASK_LOOKUP_INTERVAL_MS)
         }
-        error("No open '${Elements.USER_TASK_CLARIFY_ALTERNATIVE.value}' task for application $applicationId")
+        error("No open '${FlowNodes.UserTaskClarifyAlternative.id.value}' task for application $applicationId")
     }
 
     private companion object {

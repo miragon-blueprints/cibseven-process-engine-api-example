@@ -3,7 +3,7 @@ package io.miragon.blueprint.adapter.process
 import dev.bpmcrafters.processengineapi.adapter.cibseven.embedded.shared.EngineCommandExecutor
 import dev.bpmcrafters.processengineapi.task.TaskSubscriptionApi
 import dev.bpmcrafters.processengineapi.task.support.UserTaskSupport
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -32,7 +32,7 @@ class EngineApiConfiguration {
         UserTaskSupport().apply {
             subscribe(
                 taskSubscriptionApi = taskSubscriptionApi,
-                taskDescriptionKey = Elements.USER_TASK_CLARIFY_ALTERNATIVE.value,
+                taskDescriptionKey = FlowNodes.UserTaskClarifyAlternative.id.value,
             )
         }
 }

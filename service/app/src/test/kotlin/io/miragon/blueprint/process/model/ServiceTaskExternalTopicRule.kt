@@ -1,6 +1,7 @@
 package io.miragon.blueprint.process.model
 
 import io.miragon.bpmn.domain.shared.ServiceTaskDefinition
+import io.miragon.bpmn.domain.shared.TaskImplementation
 import io.miragon.bpmn.domain.validation.SingleModelValidationRule
 import io.miragon.bpmn.domain.validation.model.Severity
 import io.miragon.bpmn.domain.validation.model.SingleModelValidationContext
@@ -34,12 +35,6 @@ class ServiceTaskExternalTopicRule : SingleModelValidationRule {
                 )
             }
 
-    private fun usesExternalTask(task: ServiceTaskDefinition): Boolean {
-        val kind = task.engineSpecificProperties[ServiceTaskDefinition.IMPL_KIND_KEY] as? String
-        return kind == EXTERNAL_TASK_KIND
-    }
-
-    private companion object {
-        const val EXTERNAL_TASK_KIND = "EXTERNAL_TASK"
-    }
+    private fun usesExternalTask(task: ServiceTaskDefinition): Boolean =
+        task.implementation is TaskImplementation.ExternalTask
 }

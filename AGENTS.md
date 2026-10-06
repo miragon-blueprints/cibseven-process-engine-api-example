@@ -61,8 +61,9 @@ code. The hard rules:
   root package, so `io.miragon.blueprint.config` would fail. Cross-cutting `@Configuration` (CORS,
   OpenAPI, error handling) goes in `adapter.inbound.rest` — the `Configuration` suffix is whitelisted
   there.
-- **`adapter/process` is generated.** Never hand-edit `*ProcessApi.kt`; edit the `.bpmn` and re-run
-  `generateBpmnModels`.
+- **`adapter/process` is generated.** Never hand-edit `*ProcessApi.kt` or the shared
+  `ServiceTasks`/`Messages`/`ProcessVariables`/`Errors`/`Escalations` files; edit the `.bpmn` and
+  re-run `generateBpmnModels`.
 - **Service tasks are external topics.** A custom model rule (`ServiceTaskExternalTopicRule`) requires
   every service task to be an external task with a topic — no embedded delegates. The trade-offs
   behind this are written up in [`docs/execution-and-task-listeners.md`](docs/execution-and-task-listeners.md).
@@ -75,6 +76,10 @@ code. The hard rules:
 
 - `bpmn-to-code` generates typed process constants from the models at build time; a custom model
   test requires every service task to be an external task with a topic.
+- Since bpmn-to-code 6 the API is node-centric: `<Process>ProcessApi.FlowNodes.<Node>` carries the
+  element (`.id`, `ELEMENT_ID`), its `Variables` and its successors (`Next`). Process tests assert
+  the walked path as a compile-checked `ProcessPath` (`process/util/ProcessPathAssertions.kt`)
+  instead of hand-maintained element-id lists.
 - `bpmnlint` tooling lives at the **repo root** (`package.json`, `.bpmnlintrc`): `npm ci && npm run
   lint:bpmn`. It also runs on staged `.bpmn` via `.githooks/pre-commit` (install: `npm run hooks:install`).
 
@@ -88,7 +93,7 @@ TDD. Match the test style to the layer:
 | application service | mockk unit tests (mock the ports) |
 | `adapter.inbound.rest` | `@WebMvcTest` + MockkBean |
 | `adapter.outbound.db` | `@DataJpaTest` |
-| process end-to-end | CIB seven process tests (the real `@ProcessEngineWorker` beans consume the external service tasks) |
+| process end-to-end | CIB seven process tests (the real `@ProcessEngineWorker` beans consume the external service tasks), paths asserted via `ProcessPath` |
 
 **Mutation testing gates PRs at 80** (`:service:app:pitest`): a test that executes without asserting
 will fail CI. Coverage says a line ran; mutation says a test would have noticed. The PR gate runs

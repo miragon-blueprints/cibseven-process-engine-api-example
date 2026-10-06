@@ -8,8 +8,7 @@ process_engine_api_version = "1.7"
 process_engine_worker_version = "0.8.4"
 process_engine_adapter_cib7_version = "2026.07.1"
 springdoc_version = "3.1.0"   # 3.x = the Spring Boot 4 line; 3.1.0 is built against SB 4.1.0
-bpmn_to_code_version = "3.1.0"
-bpmn_to_code_testing_version = "5.1.0"
+bpmn_to_code_version = "6.1.1"
 archunit_version = "1.4.2"
 konsist_version = "0.17.3"
 cib7_jgiven_version = "2.1.0"
@@ -46,7 +45,7 @@ prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }   # ver
 
 # BPMN-to-code (generates the typed process API from the *.bpmn models; testing = model validation)
 bpmn-to-code-runtime = { module = "io.miragon:bpmn-to-code-runtime", version.ref = "bpmn_to_code_version" }
-bpmn-to-code-testing = { module = "io.miragon:bpmn-to-code-testing", version.ref = "bpmn_to_code_testing_version" }
+bpmn-to-code-testing = { module = "io.miragon:bpmn-to-code-testing", version.ref = "bpmn_to_code_version" }
 
 # Architecture tests
 archunit = { module = "com.tngtech.archunit:archunit", version.ref = "archunit_version" }
