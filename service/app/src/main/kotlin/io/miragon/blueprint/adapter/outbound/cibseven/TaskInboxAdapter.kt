@@ -1,6 +1,6 @@
 package io.miragon.blueprint.adapter.outbound.cibseven
 
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
 import io.miragon.blueprint.application.port.outbound.TaskInboxPort
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import org.cibseven.bpm.engine.RuntimeService
@@ -25,7 +25,7 @@ class TaskInboxAdapter(
 ) : TaskInboxPort {
 
     override fun findOpenClarifications(): List<TaskInboxPort.OpenClarification> {
-        val tasks = taskService.findOpenTasks(Elements.USER_TASK_CLARIFY_ALTERNATIVE.value)
+        val tasks = taskService.findOpenTasks(FlowNodes.UserTaskClarifyAlternative.id.value)
         val businessKeys = runtimeService.businessKeysById(tasks.map { it.processInstanceId })
         return tasks.mapNotNull { task ->
             val applicationId = businessKeys[task.processInstanceId] ?: return@mapNotNull null

@@ -11,8 +11,8 @@ import dev.bpmcrafters.processengineapi.task.CompleteTaskCmd
 import dev.bpmcrafters.processengineapi.task.TaskInformation
 import dev.bpmcrafters.processengineapi.task.UserTaskCompletionApi
 import dev.bpmcrafters.processengineapi.task.support.UserTaskSupport
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Messages
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
+import io.miragon.blueprint.adapter.process.Messages
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import io.miragon.blueprint.domain.bike.BikeId
 import io.miragon.blueprint.domain.leasing.testLeasingApplication
@@ -69,7 +69,7 @@ class LeasingProcessAdapterTest {
         // given: an open clarify-alternative task delivered to the user-task pool for this application
         val task = TaskInformation(
             taskId = "task-1",
-            meta = mapOf(CommonRestrictions.ACTIVITY_ID to Elements.USER_TASK_CLARIFY_ALTERNATIVE.value),
+            meta = mapOf(CommonRestrictions.ACTIVITY_ID to FlowNodes.UserTaskClarifyAlternative.id.value),
         )
         every { userTaskSupport.getAllTasks() } returns listOf(task)
         every { userTaskSupport.getPayload("task-1") } returns mapOf("applicationId" to id.value.toString())

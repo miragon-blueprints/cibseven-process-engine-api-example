@@ -48,8 +48,9 @@ dependencies {
     testImplementation(project(":service:common-architecture-tests"))
 }
 
-// Generates the typed `*ProcessApi` objects (element ids, messages, timers, variables, …) from the
-// BPMN models, so workers and tests reference process elements as compile-checked constants.
+// Generates the typed process API (one node-centric `*ProcessApi` per model plus the shared
+// ServiceTasks/Messages/ProcessVariables/Errors/Escalations files) from the BPMN models, so workers
+// and tests reference process elements as compile-checked constants.
 tasks.register<GenerateBpmnModelsTask>("generateBpmnModels") {
     baseDir = projectDir.toString()
     filePattern = "src/main/resources/bpmn/*.bpmn"
@@ -78,9 +79,7 @@ pitest {
     failWhenNoMutations.set(false)
     excludedClasses.set(
         listOf(
-            "io.miragon.blueprint.adapter.process.*ProcessApi*",
-            "io.miragon.blueprint.adapter.process.HistoryCleanupConfiguration*",
-            "io.miragon.blueprint.adapter.process.EngineApiConfiguration*",
+            "io.miragon.blueprint.adapter.process.*",
             "io.miragon.blueprint.CibsevenBikeLeasingApplication*",
             "io.miragon.blueprint.BikeCatalogueSeeder*",
             "io.miragon.blueprint.adapter.inbound.rest.DevCorsConfiguration*",

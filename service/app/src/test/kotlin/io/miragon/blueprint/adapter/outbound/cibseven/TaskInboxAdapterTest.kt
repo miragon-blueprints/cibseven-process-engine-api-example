@@ -1,6 +1,6 @@
 package io.miragon.blueprint.adapter.outbound.cibseven
 
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import io.mockk.every
 import io.mockk.mockk
@@ -40,7 +40,7 @@ class TaskInboxAdapterTest {
         // then: the open task surfaces as its application id, queried by the clarify-alternative key
         assertThat(result).hasSize(1)
         assertThat(result.single().applicationId).isEqualTo(ApplicationId.of(applicationId))
-        verify { taskQuery.taskDefinitionKey(Elements.USER_TASK_CLARIFY_ALTERNATIVE.value) }
+        verify { taskQuery.taskDefinitionKey(FlowNodes.UserTaskClarifyAlternative.id.value) }
     }
 
     @Test

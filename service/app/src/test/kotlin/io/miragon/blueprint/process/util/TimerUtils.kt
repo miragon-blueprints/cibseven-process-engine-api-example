@@ -1,6 +1,6 @@
 package io.miragon.blueprint.process.util
 
-import io.miragon.bpmn.runtime.ElementId
+import io.miragon.bpmn.runtime.FlowNode
 import org.cibseven.bpm.engine.ProcessEngine
 
 /**
@@ -8,13 +8,13 @@ import org.cibseven.bpm.engine.ProcessEngine
  * Replaces clock manipulation: the tests verify that the timer path is wired correctly, not the
  * real-world waiting duration.
  */
-fun ProcessEngine.fireTimer(timerActivityId: ElementId) {
+fun ProcessEngine.fireTimer(timerEvent: FlowNode) {
     val timer =
         managementService
             .createJobQuery()
             .timers()
-            .activityId(timerActivityId.value)
+            .activityId(timerEvent.id.value)
             .singleResult()
-    requireNotNull(timer) { "no timer job found for activity '${timerActivityId.value}'" }
+    requireNotNull(timer) { "no timer job found for activity '${timerEvent.id.value}'" }
     managementService.executeJob(timer.id)
 }
