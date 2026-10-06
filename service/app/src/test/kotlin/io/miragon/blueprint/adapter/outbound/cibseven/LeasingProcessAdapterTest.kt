@@ -21,9 +21,11 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 
 class LeasingProcessAdapterTest {
 
@@ -84,6 +86,64 @@ class LeasingProcessAdapterTest {
         val payload = cmd.captured.get()
         assertThat(payload["alternativeFound"]).isEqualTo(true)
         assertThat(payload["bikeId"]).isEqualTo("BIKE-42")
+    }
+
+    @Test
+    fun `completeAlternativeClarification skips tasks of other activities, unreadable tasks and other applications`() {
+        val clarifyAlternative = mapOf(CommonRestrictions.ACTIVITY_ID to FlowNodes.UserTaskClarifyAlternative.id.value)
+        val ownApplication = mapOf("applicationId" to id.value.toString())
+        every { userTaskSupport.getAllTasks() } returns listOf(
+            TaskInformation(taskId = "other-activity", meta = mapOf(CommonRestrictions.ACTIVITY_ID to "otherTask")),
+            TaskInformation(taskId = "unreadable", meta = clarifyAlternative),
+            TaskInformation(taskId = "other-application", meta = clarifyAlternative),
+            TaskInformation(taskId = "matching", meta = clarifyAlternative),
+        )
+        every { userTaskSupport.getPayload("other-activity") } returns ownApplication
+        every { userTaskSupport.getPayload("unreadable") } throws IllegalStateException("task gone")
+        every { userTaskSupport.getPayload("other-application") } returns mapOf("applicationId" to "another-id")
+        every { userTaskSupport.getPayload("matching") } returns ownApplication
+        val cmd = slot<CompleteTaskCmd>()
+        every { userTaskCompletionApi.completeTask(capture(cmd)) } returns CompletableFuture.completedFuture(Empty)
+
+        underTest.completeAlternativeClarification(id, alternativeFound = false, bikeId = null)
+
+        assertThat(cmd.captured.taskId).isEqualTo("matching")
+        assertThat(cmd.captured.get()).isEqualTo(mapOf("alternativeFound" to false))
+    }
+
+    @Test
+    fun `completeAlternativeClarification waits for the task to be delivered`() {
+        val deliveredTask = TaskInformation(
+            taskId = "task-1",
+            meta = mapOf(CommonRestrictions.ACTIVITY_ID to FlowNodes.UserTaskClarifyAlternative.id.value),
+        )
+        every { userTaskSupport.getAllTasks() } returnsMany listOf(emptyList(), listOf(deliveredTask))
+        every { userTaskSupport.getPayload("task-1") } returns mapOf("applicationId" to id.value.toString())
+        val cmd = slot<CompleteTaskCmd>()
+        every { userTaskCompletionApi.completeTask(capture(cmd)) } returns CompletableFuture.completedFuture(Empty)
+
+        underTest.completeAlternativeClarification(id, alternativeFound = true, bikeId = null)
+
+        assertThat(cmd.captured.taskId).isEqualTo("task-1")
+        verify(exactly = 2) { userTaskSupport.getAllTasks() }
+    }
+
+    @Test
+    fun `a failed correlation surfaces the engine exception instead of the async wrapper`() {
+        val engineFailure = IllegalStateException("no matching execution")
+        every { correlationApi.correlateMessage(any()) } returns CompletableFuture.failedFuture(engineFailure)
+
+        assertThatThrownBy { underTest.correlateContractSigned(id) }.isSameAs(engineFailure)
+    }
+
+    @Test
+    fun `a failed correlation without an engine cause surfaces the async wrapper itself`() {
+        val causelessFailure = CompletionException("correlation aborted", null)
+        val failingCorrelation = mockk<CompletableFuture<Empty>>()
+        every { failingCorrelation.join() } throws causelessFailure
+        every { correlationApi.correlateMessage(any()) } returns failingCorrelation
+
+        assertThatThrownBy { underTest.correlateContractSigned(id) }.isSameAs(causelessFailure)
     }
 
     @Test
