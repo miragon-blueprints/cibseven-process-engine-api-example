@@ -1,24 +1,24 @@
 [versions]
-spring_version = "4.1.0"
+spring_version = "4.1.1"
 spring_dependency_version = "1.1.7"
-kotlin_version = "2.4.0"
+kotlin_version = "2.4.20"
 kotlin_logging_version = "3.0.5"
 cib7_version = "2.2.0"
 process_engine_api_version = "1.7"
-process_engine_worker_version = "0.8.4"
-process_engine_adapter_cib7_version = "2026.07.1"
-springdoc_version = "3.1.0"   # 3.x = the Spring Boot 4 line; 3.1.0 is built against SB 4.1.0
+process_engine_worker_version = "0.8.5"
+process_engine_adapter_cib7_version = "2026.09.1"
+springdoc_version = "3.1.1"   # 3.x = the Spring Boot 4 line; 3.1.0 is built against SB 4.1.0
 bpmn_to_code_version = "6.2.0"
-archunit_version = "1.4.2"
+archunit_version = "1.5.1"
 konsist_version = "0.17.3"
-cib7_jgiven_version = "2.1.0"
+cib7_jgiven_version = "2.2.0"
 jgiven_kotlin_version = "2.0.2.1"
 
 [libraries]
 web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring_version" }
 devtools = { module = "org.springframework.boot:spring-boot-devtools", version.ref = "spring_version" }
 jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring_version" }
-postgres = { module = "org.postgresql:postgresql", version = "42.7.12" }
+postgres = { module = "org.postgresql:postgresql", version = "42.7.13" }
 flyway = { module = "org.springframework.boot:spring-boot-starter-flyway", version.ref = "spring_version" }
 flyway-postgres = { module = "org.flywaydb:flyway-database-postgresql" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin_version" }
@@ -56,10 +56,10 @@ spring_test = { module = "org.springframework.boot:spring-boot-starter-test", ve
 spring_web_test = { module = "org.springframework.boot:spring-boot-webmvc-test", version.ref = "spring_version" }
 spring_data_jpa_test = { module = "org.springframework.boot:spring-boot-starter-data-jpa-test", version.ref = "spring_version" }
 mockito = { module = "org.mockito:mockito-inline", version = "5.2.0" }
-kotlin_mockito = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.3.0" }
+kotlin_mockito = { module = "org.mockito.kotlin:mockito-kotlin", version = "6.4.0" }
 mockk = { module = "io.mockk:mockk", version = "1.14.11" }
 spring_mockk = { module = "com.ninja-squad:springmockk", version = "5.0.1" }
-h2 = { module = "com.h2database:h2", version = "2.4.240" }
+h2 = { module = "com.h2database:h2", version = "2.5.252" }
 
 # Process test — CIB seven
 cib7-bpm-assert = { module = "org.cibseven.bpm:cibseven-bpm-assert", version.ref = "cib7_version" }
