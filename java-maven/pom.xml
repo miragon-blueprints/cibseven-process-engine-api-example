@@ -53,7 +53,7 @@
         <bpmn-to-code.version>6.2.0</bpmn-to-code.version>
 
         <!-- Architecture tests: ArchUnit for the bytecode rules, Checkstyle for the two source rules
-             (in place of Konsist, which only reads Kotlin) — see docs/adr/0007 -->
+             bytecode cannot express — see docs/adr/0007 -->
         <archunit.version>1.4.2</archunit.version>
         <checkstyle.version>10.21.1</checkstyle.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
