@@ -8,7 +8,7 @@
     "hooks:install": "git config core.hooksPath .githooks"
   },
   "devDependencies": {
-    "@miragon/bpmnlint-plugin-rules": "0.10.1",
+    "@miragon/bpmnlint-plugin-rules": "0.11.1",
     "bpmnlint": "11.14.0"
   }
 }
