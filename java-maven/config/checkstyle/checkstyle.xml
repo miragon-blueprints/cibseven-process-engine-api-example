@@ -4,8 +4,8 @@
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-  The two source-structure guidelines that Konsist enforces in the Kotlin variant (see
-  docs/adr/0007). ArchUnit reads bytecode and cannot see these; Checkstyle reads source and can.
+  The two source-structure guidelines of the architecture suite (see docs/adr/0007). ArchUnit reads
+  bytecode and cannot see these; Checkstyle reads source and can.
   The generated adapter/process package is excluded via the maven-checkstyle-plugin <excludes>.
 -->
 <module name="Checker">
@@ -17,7 +17,7 @@
              this extends it to every top-level type. -->
         <module name="OneTopLevelClass"/>
 
-        <!-- No wildcard imports. As in the Konsist rule, only java.util.* wildcards are allowed. -->
+        <!-- No wildcard imports, except for java.util.*. -->
         <module name="AvoidStarImport">
             <property name="excludes" value="java.util"/>
         </module>
