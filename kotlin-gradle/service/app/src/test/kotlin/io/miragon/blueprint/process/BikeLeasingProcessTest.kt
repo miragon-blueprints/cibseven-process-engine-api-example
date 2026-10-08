@@ -17,6 +17,7 @@ import io.miragon.blueprint.application.port.inbound.SendSignatureReminderUseCas
 import io.miragon.blueprint.application.port.inbound.ValidateApplicationUseCase
 import io.miragon.blueprint.application.port.outbound.LeasingProcess
 import io.miragon.blueprint.domain.leasing.ApplicationId
+import io.miragon.blueprint.domain.leasing.ApplicationInvalidException
 import io.miragon.blueprint.domain.bike.BikeId
 import io.miragon.blueprint.domain.leasing.CustomerName
 import io.miragon.blueprint.domain.leasing.Email
@@ -48,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDateTime
+import java.util.UUID
 
 /**
  * Drives the deployed model end-to-end. Unlike the classic-delegate blueprint, the service tasks are
@@ -206,6 +208,40 @@ class BikeLeasingProcessTest {
             )
             .hasNotPassed(FlowNodes.SubProcessConcludeContract.ELEMENT_ID)
 
+        verify(exactly = 1) { rejectApplicationUseCase.reject(id) }
+        verify(exactly = 0) { sendContractUseCase.sendContract(any()) }
+    }
+
+    @Test
+    fun `invalid application - the applicationInvalid BPMN error routes it straight to rejection`() {
+        // The use case rejects the application; the worker translates that into a BpmnErrorOccurred,
+        // which the boundary error event on the validate task catches.
+        every { validateApplicationUseCase.validate(any()) } answers {
+            throw ApplicationInvalidException(ApplicationId(firstArg<UUID>()), "monthly net income must be greater than zero")
+        }
+
+        val id = submit(age = 35, income = 0.0)
+        val instance = runtimeService.findProcessInstance(id)
+
+        processEngine.continueToNextWaitState() // validate -> applicationInvalid -> rejection -> end
+
+        assertThat(instance)
+            .isEnded
+            .hasPassedInOrder(
+                ProcessPath.from(FlowNodes.StartEventLeasingRequestReceived)
+                    .then { it.serviceTaskValidateApplication }
+                    .interruptedBy(FlowNodes.ServiceTaskValidateApplication) { it.eventApplicationInvalid }
+                    .then { it.gatewayRejectionJoin }
+                    .then { it.serviceTaskSendRejection }
+                    .then { it.endEventApplicationRejected },
+            )
+            .hasNotPassed(
+                FlowNodes.BusinessRuleTaskCheckCreditRating.ELEMENT_ID,
+                FlowNodes.SubProcessConcludeContract.ELEMENT_ID,
+                FlowNodes.EndEventLeasingActive.ELEMENT_ID,
+            )
+
+        verify(exactly = 1) { validateApplicationUseCase.validate(id) }
         verify(exactly = 1) { rejectApplicationUseCase.reject(id) }
         verify(exactly = 0) { sendContractUseCase.sendContract(any()) }
     }
