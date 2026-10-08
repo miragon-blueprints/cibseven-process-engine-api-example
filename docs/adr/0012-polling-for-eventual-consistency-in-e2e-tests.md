@@ -75,8 +75,12 @@ never by sleeping a guessed duration.
   `sendContract` / `orderBike` workers *before* their `asyncAfter` continuation (and, for the handover,
   the parallel join) moves the token into the catch event, so a fast client can still hit the `409`.
   `sign-contract` and `report-handover` therefore also wait for the open subscription
-  (`GET /engine-rest/execution?businessKey=…&messageEventSubscriptionName=…`). `withdraw` needs no such
-  gate: its message start event sits in an event sub-process that is subscribed for the whole instance.
+  (`GET /engine-rest/execution?businessKey=…&messageEventSubscriptionName=…`). `withdraw` correlates
+  at any time: its message start event sits in an event sub-process that is subscribed for the whole
+  instance. The abort scenario still waits for the handover subscription before it withdraws, because
+  cancelling the instance while a worker completes an external task of the parallel branches makes the
+  engine reject one of the two transactions with an `OptimisticLockingException`, which surfaces as a
+  `500`.
   `clarify-alternative` completes a user task resolved from the delivery pool, hence gating on the
   inbox listing the item.
 - **Deferred, not adopted:** a test-only endpoint exposing the engine's last-processed job/command
