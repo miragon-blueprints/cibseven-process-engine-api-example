@@ -77,16 +77,16 @@ class OpenApiSpecExportTest {
         return response.body();
     }
 
-    /** Walk up from the module working directory until the directory containing {@code .mvn/} is found. */
+    /** Walk up from the module working directory until the directory holding the {@code openapi/} contract is found. */
     private static Path repoRoot() {
         Path dir = Path.of(System.getProperty("user.dir")).toAbsolutePath();
         while (dir != null) {
-            if (Files.isDirectory(dir.resolve(".mvn"))) {
+            if (Files.isDirectory(dir.resolve("openapi"))) {
                 return dir;
             }
             dir = dir.getParent();
         }
         throw new IllegalStateException(
-            "could not locate the repo root (no .mvn/ found above " + System.getProperty("user.dir") + ")");
+            "could not locate the repo root (no openapi directory found above " + System.getProperty("user.dir") + ")");
     }
 }
