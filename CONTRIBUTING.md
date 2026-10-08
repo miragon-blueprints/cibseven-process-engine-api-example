@@ -14,12 +14,28 @@ npm ci && npm run hooks:install                                # BPMN lint + git
 You need **JDK 21**, **Node ≥ 22.12** (for the BPMN lint tooling), and **Docker (or Podman)** for
 Postgres.
 
-Run the app locally:
+<!-- variant:blueprint -->
+The service exists in two equivalent variants: [`kotlin-gradle/`](kotlin-gradle/README.md) (recommended)
+and [`java-maven/`](java-maven/README.md). Run either one.
+<!-- /variant:blueprint -->
+
+The build wrapper is included, so nothing else needs installing. Start Postgres, then the backend and
+embedded engine on :8080:
 
 ```bash
-docker compose -f stack/docker-compose.yml up -d   # Postgres
-./gradlew :service:app:bootRun                      # backend + embedded engine on :8080
+docker compose -f stack/docker-compose.yml up -d
 ```
+
+<!-- variant:kotlin-gradle -->
+```bash
+cd kotlin-gradle && ./gradlew :service:app:bootRun
+```
+<!-- /variant:kotlin-gradle -->
+<!-- variant:java-maven -->
+```bash
+cd java-maven && ./mvnw -pl service/app -am spring-boot:run
+```
+<!-- /variant:java-maven -->
 
 ### Ports
 
@@ -55,20 +71,30 @@ The dev loop above runs the backend from source. To run it as an OCI image — *
 build the image with Spring's buildpacks (no Dockerfile), then run it against Postgres. The rationale
 is in [ADR-0011](docs/adr/0011-build-and-deployment-approach.md).
 
-```bash
-# 1. build the OCI image (Spring buildpacks — no Dockerfile). Produces cibseven-process-engine-api-example/app:1.0-SNAPSHOT
-./gradlew :service:app:bootBuildImage
+Build the OCI image; it produces `cibseven-process-engine-api-example/app:1.0-SNAPSHOT`:
 
-# 2. bring up Postgres
+<!-- variant:kotlin-gradle -->
+```bash
+(cd kotlin-gradle && ./gradlew :service:app:bootBuildImage)
+```
+<!-- /variant:kotlin-gradle -->
+<!-- variant:java-maven -->
+```bash
+(cd java-maven && ./mvnw -pl service/app -am -DskipTests package spring-boot:build-image-no-fork)
+```
+<!-- /variant:java-maven -->
+
+Then bring up Postgres:
+
+```bash
 docker compose -f stack/docker-compose.yml up -d
 ```
 
-**Podman:** `bootBuildImage` needs a Docker-API socket. Expose podman's and point the build at it:
+**Podman:** the image build needs a Docker-API socket. Expose podman's, then build the image as above:
 
 ```bash
 podman system service --time=0 unix:///tmp/podman.sock &
 export DOCKER_HOST=unix:///tmp/podman.sock
-./gradlew :service:app:bootBuildImage
 ```
 
 **Configuration.** `application.yaml` ships dev defaults; the deploy-relevant values are read from the
@@ -87,13 +113,18 @@ environment (they win over the baked defaults):
 
 ## Scripts
 
-```bash
-# backend
-./gradlew build                         # arch + unit + process + model validation + spec export
-./gradlew :service:app:pitest           # mutation score >= 80
-./gradlew generateBpmnModels            # regenerate the typed process API after editing a .bpmn
+The build, mutation-testing and code-generation commands are listed in the README next to the code:
 
-# BPMN (tooling at repo root)
+<!-- variant:kotlin-gradle -->
+- [`kotlin-gradle/README.md`](kotlin-gradle/README.md#-commands)
+  <!-- /variant:kotlin-gradle -->
+  <!-- variant:java-maven -->
+- [`java-maven/README.md`](java-maven/README.md#-commands)
+  <!-- /variant:java-maven -->
+
+From the repo root:
+
+```bash
 npm ci && npm run lint:bpmn             # bpmnlint the .bpmn models
 ```
 
@@ -107,8 +138,15 @@ npm ci && npm run lint:bpmn             # bpmnlint the .bpmn models
 - **Conventional Commits.** Commit messages and PR titles follow
   [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`,
   `refactor:`, `test:`, `chore:`). Write everything in **English**.
-- **Keep the gates green.** The architecture (ArchUnit + Konsist), contract-drift and mutation (≥ 80)
-  gates run in CI on every PR. They are fitness functions, not style guides — a violation fails the
+  <!-- variant:blueprint -->
+- **Change both variants together.** A change in behaviour goes into `kotlin-gradle/` *and*
+  `java-maven/` in the same PR, with equivalent tests. Changes that only concern one language's idioms
+  stay on that side. Models, forms, migrations and `application.yaml` exist in both variants and must
+  be byte-identical — copy your change over; the `Blueprint Checks` workflow fails otherwise. See
+  [ADR-0013](docs/adr/0013-two-stack-variants-side-by-side-on-main.md).
+  <!-- /variant:blueprint -->
+- **Keep the gates green.** The architecture, contract-drift and mutation (≥ 80) gates run in CI on
+  every PR. They are fitness functions, not style guides — a violation fails the
   build. The mutation gate is **diff-scoped** on PRs (only the classes you changed); the full-module
   gate-80 sweep runs nightly.
 - **Add tests.** This is a TDD codebase; match the test style to the layer (see `AGENTS.md`).
@@ -125,10 +163,20 @@ npm ci && npm run lint:bpmn             # bpmnlint the .bpmn models
 
 ## Before opening a PR
 
+<!-- variant:kotlin-gradle -->
 ```bash
-./gradlew build
+(cd kotlin-gradle && ./gradlew build && ./gradlew :service:app:pitest)   # mutation score >= 80
+```
+<!-- /variant:kotlin-gradle -->
+<!-- variant:java-maven -->
+```bash
+(cd java-maven && ./mvnw verify \
+  && ./mvnw -pl service/app -am test-compile pitest:mutationCoverage)   # mutation score >= 80
+```
+<!-- /variant:java-maven -->
+
+```bash
 git diff --exit-code openapi/openapi.json    # the API contract must not drift
-./gradlew :service:app:pitest                # mutation score >= 80
 npm ci && npm run lint:bpmn                   # the BPMN models lint clean
 ```
 
