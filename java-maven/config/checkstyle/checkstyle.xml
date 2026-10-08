@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!--
+  The two source-structure guidelines of the architecture suite (see docs/adr/0007). ArchUnit reads
+  bytecode and cannot see these; Checkstyle reads source and can.
+  The generated adapter/process package is excluded via the maven-checkstyle-plugin <excludes>.
+-->
+<module name="Checker">
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
+
+    <module name="TreeWalker">
+        <!-- One top-level type per file (SRP). javac already enforces this for public types;
+             this extends it to every top-level type. -->
+        <module name="OneTopLevelClass"/>
+
+        <!-- No wildcard imports, except for java.util.*. -->
+        <module name="AvoidStarImport">
+            <property name="excludes" value="java.util"/>
+        </module>
+    </module>
+</module>

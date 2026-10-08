@@ -28,6 +28,12 @@ copied from [`adr/0000-adr-template.md`](adr/0000-adr-template.md).
 | [0009](adr/0009-actuator-probes-and-prometheus-metrics.md) | Actuator health/liveness/readiness probes and Prometheus metrics, exposed out of the box. |
 | [0010](adr/0010-flyway-for-database-migrations.md) | Flyway for versioned schema migrations; Hibernate switches to `validate`. |
 | [0011](adr/0011-build-and-deployment-approach.md) | Build & deployment: `bootBuildImage` OCI image for the headless backend. |
+| [0012](adr/0012-polling-for-eventual-consistency-in-e2e-tests.md) | Polling for eventual consistency in the end-to-end tests. |
+| [0013](adr/0013-two-stack-variants-side-by-side-on-main.md) | Two stack variants — Kotlin + Gradle and Java + Maven — side by side on `main`. |
+
+## Guides
+
+- [`starter.md`](starter.md) — turn the repo into a single-stack starter with one command.
 
 ## Notes
 

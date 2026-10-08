@@ -1,12 +1,17 @@
 .claude/logs/
+**/bin/
+# variant:kotlin-gradle
 .gradle
 **/build/
-**/bin/
-!gradle/wrapper/gradle-wrapper.jar
+!kotlin-gradle/gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+# /variant:kotlin-gradle
+# variant:java-maven
+**/target/
+# /variant:java-maven
 **/jgiven-reports/
 .idea
 *.iml
-.kotlin/
 .DS_Store
 .vscode
 .context
