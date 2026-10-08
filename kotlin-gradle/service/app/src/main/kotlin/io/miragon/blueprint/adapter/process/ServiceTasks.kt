@@ -34,8 +34,6 @@ object ServiceTasks {
 
   const val SEND_REMINDER_MAIL: String = "sendReminderMail"
 
-  const val VALIDATE_APPLICATION: String = "validateApplication"
-
   val all: List<String> = listOf(
     ACTIVATE_LEASING,
     BOOK_COSTS,
@@ -48,6 +46,5 @@ object ServiceTasks {
     SEND_CONTRACT,
     SEND_REJECTION,
     SEND_REMINDER_MAIL,
-    VALIDATE_APPLICATION,
   )
 }

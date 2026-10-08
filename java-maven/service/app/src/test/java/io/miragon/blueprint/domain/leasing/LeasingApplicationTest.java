@@ -99,14 +99,20 @@ class LeasingApplicationTest {
     }
 
     @Test
-    void validate_fails_when_the_monthly_net_income_is_zero() {
-        // given: an application without income
-        LeasingApplication application = testLeasingApplication().monthlyNetIncome(0.0).build();
-        // when / then: validation reports the application as invalid
-        assertThatThrownBy(application::validate)
-            .isInstanceOf(ApplicationInvalidException.class)
-            .hasMessage("Application " + application.id().value()
-                + " is invalid: monthly net income must be greater than zero");
+    void receive_rejects_an_application_whose_monthly_net_income_is_zero() {
+        // when / then: an application without income cannot be received
+        assertThatThrownBy(() -> receiveApplication(0.0))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Monthly net income must be greater than zero");
+    }
+
+    @Test
+    void receive_accepts_the_smallest_positive_monthly_net_income_as_RECEIVED() {
+        // when: an application with a minimal income is received
+        LeasingApplication application = receiveApplication(0.01);
+        // then: it starts its lifecycle as RECEIVED
+        assertThat(application.status()).isEqualTo(LeasingStatus.RECEIVED);
+        assertThat(application.monthlyNetIncome()).isEqualTo(0.01);
     }
 
     @Test
@@ -148,13 +154,14 @@ class LeasingApplicationTest {
         assertThat(cancelled).isEqualTo(testLeasingApplication().status(LeasingStatus.CANCELLED).build());
     }
 
-    @Test
-    void validate_returns_the_unchanged_application_when_the_monthly_net_income_is_positive() {
-        // given: a solvent application
-        LeasingApplication application = testLeasingApplication().monthlyNetIncome(3500.0).build();
-        // when: it is validated
-        LeasingApplication validated = application.validate();
-        // then: the very same application is returned
-        assertThat(validated).isSameAs(application);
+    private LeasingApplication receiveApplication(double monthlyNetIncome) {
+        return LeasingApplication.receive(
+            ApplicationId.newId(),
+            new CustomerName("John Doe"),
+            new Email("john.doe@test.com"),
+            35,
+            monthlyNetIncome,
+            new BikeId("BIKE-900"),
+            LocalDateTime.parse("2024-01-15T10:30:00"));
     }
 }

@@ -31,6 +31,9 @@ public record LeasingApplication(
             double monthlyNetIncome,
             BikeId bikeId,
             LocalDateTime createdAt) {
+        if (monthlyNetIncome <= 0.0) {
+            throw new IllegalArgumentException("Monthly net income must be greater than zero");
+        }
         return new LeasingApplication(
                 id,
                 customerName,
@@ -42,13 +45,6 @@ public record LeasingApplication(
                 createdAt,
                 null,
                 null);
-    }
-
-    public LeasingApplication validate() {
-        if (monthlyNetIncome <= 0.0) {
-            throw new ApplicationInvalidException(id, "monthly net income must be greater than zero");
-        }
-        return this;
     }
 
     public LeasingApplication withContract(ContractId contractId) {

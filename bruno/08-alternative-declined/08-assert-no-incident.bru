@@ -1,0 +1,16 @@
+meta {
+  name: Assert no incident was raised
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{engineRest}}/history/incident?processInstanceId={{processInstanceId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: length 0
+}

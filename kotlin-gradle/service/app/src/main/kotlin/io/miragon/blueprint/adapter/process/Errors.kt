@@ -11,12 +11,12 @@ import kotlin.collections.List
  * BPMN error definitions with name and code, as thrown and caught by the processes.
  */
 object Errors {
-  val APPLICATION_INVALID: BpmnErrorDefinition = BpmnErrorDefinition(
-    name = "Application_Invalid",
-    code = "applicationInvalid",
+  val BIKE_UNAVAILABLE: BpmnErrorDefinition = BpmnErrorDefinition(
+    name = "Bike_Unavailable",
+    code = "bikeUnavailable",
   )
 
   val all: List<BpmnErrorDefinition> = listOf(
-    APPLICATION_INVALID,
+    BIKE_UNAVAILABLE,
   )
 }

@@ -1,0 +1,17 @@
+meta {
+  name: Get the leasing application after the contract was cancelled
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.applicationId: eq {{applicationId}}
+  res.body.status: eq CANCELLED
+}
