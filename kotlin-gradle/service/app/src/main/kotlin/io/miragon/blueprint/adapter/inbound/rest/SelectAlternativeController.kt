@@ -28,7 +28,7 @@ class SelectAlternativeController(
     fun clarifyAlternative(
         @PathVariable applicationId: String,
         @RequestBody input: AlternativeDecisionInput,
-    ): ResponseEntity<Unit> {
+    ): ResponseEntity<Void> {
         useCase.selectAlternative(
             SelectAlternativeUseCase.Command(
                 applicationId = ApplicationId.of(applicationId),

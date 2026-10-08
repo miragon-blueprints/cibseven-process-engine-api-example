@@ -17,7 +17,7 @@ class ReportHandoverController(
 
     @Operation(operationId = "reportHandover")
     @PostMapping("/{applicationId}/report-handover")
-    fun reportHandover(@PathVariable applicationId: String): ResponseEntity<Unit> {
+    fun reportHandover(@PathVariable applicationId: String): ResponseEntity<Void> {
         useCase.reportHandover(ApplicationId.of(applicationId))
         return ResponseEntity.accepted().build()
     }
