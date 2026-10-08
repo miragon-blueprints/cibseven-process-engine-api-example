@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 class ApplicationIdTest {
 
     @Test
-    void newId_creates_a_fresh_random_id() {
+    void a_new_id_is_fresh_and_random() {
         // when: two ids are generated
         ApplicationId first = ApplicationId.newId();
         ApplicationId second = ApplicationId.newId();
@@ -32,5 +32,13 @@ class ApplicationIdTest {
         // when/then: a value that is not a UUID is refused
         assertThatThrownBy(() -> ApplicationId.of("not-a-uuid"))
             .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void the_textual_form_names_the_type_and_the_value() {
+        // given: an id, as the services interpolate it into the detail of a 404 response
+        ApplicationId id = ApplicationId.of("123e4567-e89b-12d3-a456-426614174000");
+        // when/then: both variants render it identically
+        assertThat(id.toString()).isEqualTo("ApplicationId(value=123e4567-e89b-12d3-a456-426614174000)");
     }
 }

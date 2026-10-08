@@ -11,4 +11,9 @@ public record ApplicationId(UUID value) {
     public static ApplicationId of(String value) {
         return new ApplicationId(UUID.fromString(value));
     }
+
+    @Override
+    public String toString() {
+        return "ApplicationId(value=" + value + ")";
+    }
 }
