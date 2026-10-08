@@ -1,4 +1,4 @@
-name: Nightly Checks · Kotlin/Gradle
+name: Nightly Checks · Java/Maven
 
 on:
   schedule:
@@ -18,18 +18,16 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v6
+          cache: maven
 
       - name: Run PIT mutation testing
-        working-directory: kotlin-gradle
-        run: ./gradlew :service:app:pitest --no-daemon
+        working-directory: java-maven
+        run: ./mvnw -B -pl service/app -am test-compile pitest:mutationCoverage
 
       - name: Upload mutation report
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: pitest-report-kotlin-gradle
-          path: kotlin-gradle/service/app/build/reports/pitest
+          name: pitest-report-java-maven
+          path: java-maven/service/app/target/pit-reports
           if-no-files-found: warn
