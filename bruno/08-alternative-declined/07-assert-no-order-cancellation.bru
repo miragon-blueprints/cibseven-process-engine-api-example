@@ -1,0 +1,16 @@
+meta {
+  name: Assert no order cancellation was attempted
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{engineRest}}/history/activity-instance?processInstanceId={{processInstanceId}}&activityId=callActivity_cancelBikeOrder
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: length 0
+}

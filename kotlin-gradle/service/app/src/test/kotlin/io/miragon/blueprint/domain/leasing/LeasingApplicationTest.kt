@@ -90,11 +90,20 @@ class LeasingApplicationTest {
     }
 
     @Test
-    fun `validate fails when the monthly net income is zero`() {
-        // given: an application without income
-        val application = testLeasingApplication(monthlyNetIncome = 0.0)
-        // when / then: validation reports the application as invalid
-        assertThatThrownBy { application.validate() }.isInstanceOf(ApplicationInvalidException::class.java)
+    fun `receive rejects an application whose monthly net income is zero`() {
+        // when / then: an application without income cannot be received
+        assertThatThrownBy { receiveApplication(monthlyNetIncome = 0.0) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessage("Monthly net income must be greater than zero")
+    }
+
+    @Test
+    fun `receive accepts the smallest positive monthly net income as RECEIVED`() {
+        // when: an application with a minimal income is received
+        val application = receiveApplication(monthlyNetIncome = 0.01)
+        // then: it starts its lifecycle as RECEIVED
+        assertThat(application.status).isEqualTo(LeasingStatus.RECEIVED)
+        assertThat(application.monthlyNetIncome).isEqualTo(0.01)
     }
 
     @Test
@@ -139,13 +148,14 @@ class LeasingApplicationTest {
         assertThat(cancelled).isEqualTo(application.copy(status = LeasingStatus.CANCELLED))
     }
 
-    @Test
-    fun `validate returns the unchanged application when the monthly net income is positive`() {
-        // given: a solvent application
-        val application = testLeasingApplication(monthlyNetIncome = 3500.0)
-        // when: it is validated
-        val validated = application.validate()
-        // then: the very same application is returned
-        assertThat(validated).isSameAs(application)
-    }
+    private fun receiveApplication(monthlyNetIncome: Double) =
+        LeasingApplication.receive(
+            id = ApplicationId.new(),
+            customerName = CustomerName("John Doe"),
+            email = Email("john.doe@test.com"),
+            age = 35,
+            monthlyNetIncome = monthlyNetIncome,
+            bikeId = BikeId("BIKE-900"),
+            createdAt = LocalDateTime.parse("2024-01-15T10:30:00"),
+        )
 }

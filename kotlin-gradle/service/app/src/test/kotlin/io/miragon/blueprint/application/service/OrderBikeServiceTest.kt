@@ -3,6 +3,7 @@ package io.miragon.blueprint.application.service
 import io.miragon.blueprint.application.port.outbound.BikeDealerPort
 import io.miragon.blueprint.application.port.outbound.LeasingApplicationRepository
 import io.miragon.blueprint.domain.bike.BikeId
+import io.miragon.blueprint.domain.bike.BikeUnavailableException
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import io.miragon.blueprint.domain.leasing.LeasingStatus
 import io.miragon.blueprint.domain.bike.OrderId
@@ -33,11 +34,10 @@ class OrderBikeServiceTest {
         every { repository.save(any()) } answers { firstArg() }
 
         // when: the bike is ordered
-        val result = underTest.orderBike(application.id)
+        val orderId = underTest.orderBike(application.id)
 
         // then: the order id is returned and the application moves to ORDERED
-        assertThat(result.bikeAvailable).isTrue()
-        assertThat(result.orderId).isEqualTo(OrderId("ORDER-900"))
+        assertThat(orderId).isEqualTo(OrderId("ORDER-900"))
         verify { bikeDealer.checkAvailability(application.bikeId) }
         verify { bikeDealer.order(application.bikeId) }
         verify { repository.save(match { it.status == LeasingStatus.ORDERED && it.orderId == OrderId("ORDER-900") }) }
@@ -52,12 +52,10 @@ class OrderBikeServiceTest {
         every { repository.findById(application.id) } returns application
         every { bikeDealer.checkAvailability(application.bikeId) } returns false
 
-        // when: the bike is ordered
-        val result = underTest.orderBike(application.id)
-
-        // then: no order is placed and the bike is reported unavailable
-        assertThat(result.bikeAvailable).isFalse()
-        assertThat(result.orderId).isNull()
+        // when / then: ordering reports the bike as unavailable and places no order
+        assertThatThrownBy { underTest.orderBike(application.id) }
+            .isInstanceOf(BikeUnavailableException::class.java)
+            .hasMessage("Bike BIKE-OOS is not available at the dealer")
         verify { bikeDealer.checkAvailability(application.bikeId) }
         verify(exactly = 0) { bikeDealer.order(any()) }
         verify(exactly = 0) { repository.save(any()) }

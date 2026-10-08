@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
@@ -69,5 +70,26 @@ class SubmitLeasingRequestServiceTest {
         }
         verify { process.submitRequest(match { it.id == id }) }
         confirmVerified(repository, bikePortfolio, process)
+    }
+
+    @Test
+    fun `submit rejects a request without income and starts no process`() {
+
+        // given: a leasing-request command without any income
+        val command =
+            SubmitLeasingRequestUseCase.Command(
+                customerName = CustomerName("John Doe"),
+                email = Email("john.doe@test.com"),
+                age = 35,
+                monthlyNetIncome = 0.0,
+                bikeId = BikeId("BIKE-900"),
+                bikeModel = "Gravel Explorer 900",
+            )
+        every { bikePortfolio.save(any()) } answers { firstArg() }
+
+        // when / then: the request is refused before anything is persisted or started
+        assertThatThrownBy { underTest.submit(command) }.isInstanceOf(IllegalArgumentException::class.java)
+        verify(exactly = 0) { repository.save(any()) }
+        verify(exactly = 0) { process.submitRequest(any()) }
     }
 }

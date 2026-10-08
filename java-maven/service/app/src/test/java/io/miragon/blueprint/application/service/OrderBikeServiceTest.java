@@ -12,10 +12,10 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import io.miragon.blueprint.application.port.inbound.OrderBikeUseCase;
 import io.miragon.blueprint.application.port.outbound.BikeDealerPort;
 import io.miragon.blueprint.application.port.outbound.LeasingApplicationRepository;
 import io.miragon.blueprint.domain.bike.BikeId;
+import io.miragon.blueprint.domain.bike.BikeUnavailableException;
 import io.miragon.blueprint.domain.bike.OrderId;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
 import io.miragon.blueprint.domain.leasing.LeasingApplication;
@@ -41,11 +41,10 @@ class OrderBikeServiceTest {
         when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when: the bike is ordered
-        OrderBikeUseCase.Result result = underTest.orderBike(application.id());
+        OrderId orderId = underTest.orderBike(application.id());
 
         // then: the order id is returned and the application moves to ORDERED
-        assertThat(result.bikeAvailable()).isTrue();
-        assertThat(result.orderId()).isEqualTo(new OrderId("ORDER-900"));
+        assertThat(orderId).isEqualTo(new OrderId("ORDER-900"));
         verify(bikeDealer).checkAvailability(application.bikeId());
         verify(bikeDealer).order(application.bikeId());
         verify(repository).save(argThat(saved ->
@@ -62,12 +61,10 @@ class OrderBikeServiceTest {
         when(repository.findById(application.id())).thenReturn(Optional.of(application));
         when(bikeDealer.checkAvailability(application.bikeId())).thenReturn(false);
 
-        // when: the bike is ordered
-        OrderBikeUseCase.Result result = underTest.orderBike(application.id());
-
-        // then: no order is placed and the bike is reported unavailable
-        assertThat(result.bikeAvailable()).isFalse();
-        assertThat(result.orderId()).isNull();
+        // when / then: ordering reports the bike as unavailable and places no order
+        assertThatThrownBy(() -> underTest.orderBike(application.id()))
+                .isInstanceOf(BikeUnavailableException.class)
+                .hasMessage("Bike BIKE-OOS is not available at the dealer");
         verify(bikeDealer).checkAvailability(application.bikeId());
         verify(bikeDealer, never()).order(any());
         verify(repository, never()).save(any());

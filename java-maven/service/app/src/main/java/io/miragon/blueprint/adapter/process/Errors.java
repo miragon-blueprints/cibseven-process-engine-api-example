@@ -8,13 +8,13 @@ import java.util.List;
  * BPMN error definitions with name and code, as thrown and caught by the processes.
  */
 public final class Errors {
-  public static final BpmnErrorDefinition APPLICATION_INVALID = new BpmnErrorDefinition("Application_Invalid", "applicationInvalid");
+  public static final BpmnErrorDefinition BIKE_UNAVAILABLE = new BpmnErrorDefinition("Bike_Unavailable", "bikeUnavailable");
 
   private Errors() {
   }
 
   public static List<BpmnErrorDefinition> all() {
     return List.of(
-        APPLICATION_INVALID);
+        BIKE_UNAVAILABLE);
   }
 }

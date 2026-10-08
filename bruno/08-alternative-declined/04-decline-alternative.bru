@@ -1,0 +1,27 @@
+meta {
+  name: Decline the alternative bike (external completion)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/api/bike-leasing/{{applicationId}}/clarify-alternative
+  body: json
+  auth: none
+}
+
+script:pre-request {
+  const id = bru.getVar('applicationId');
+  await pollApp(`/api/tasks/clarify-alternative`,
+    (b, s) => s === 200 && Array.isArray(b) && b.some((t) => t.applicationId === id));
+}
+
+body:json {
+  {
+    "alternativeFound": false
+  }
+}
+
+assert {
+  res.status: eq 202
+}
