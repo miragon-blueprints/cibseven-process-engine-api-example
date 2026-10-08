@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <!--
-        Reusable architecture-test suite (ArchUnit + JavaParser), consumed by services as a
+        Reusable architecture-test suite (ArchUnit), consumed by services as a
         `test`-scoped dependency on `io.miragon.blueprint:common-architecture-tests`.
 
         Rules live in `src/main` so they are published on the consumer's classpath. The dependencies
@@ -39,11 +39,6 @@
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit</artifactId>
-        </dependency>
-        <!-- Source-level rules (imports, one top-level type per file); replaces Konsist. -->
-        <dependency>
-            <groupId>com.github.javaparser</groupId>
-            <artifactId>javaparser-core</artifactId>
         </dependency>
     </dependencies>
 

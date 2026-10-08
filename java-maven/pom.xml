@@ -24,7 +24,7 @@
         <module>service/app</module>
     </modules>
 
-    <!-- All dependency and plugin versions of the build, in one place (see docs/adr/0008 and 0013). -->
+    <!-- All dependency and plugin versions of the build, in one place (see docs/adr/0008). -->
     <properties>
         <java.version>21</java.version>
         <!-- Must equal the parent version above; re-imported first in <dependencyManagement> (see there). -->
@@ -52,10 +52,11 @@
              validation). The Maven plugin, the runtime and the testing library share one version. -->
         <bpmn-to-code.version>6.2.0</bpmn-to-code.version>
 
-        <!-- Architecture tests: ArchUnit for the bytecode rules, JavaParser for the source rules
-             (replaces Konsist, which only reads Kotlin) -->
+        <!-- Architecture tests: ArchUnit for the bytecode rules, Checkstyle for the two source rules
+             (in place of Konsist, which only reads Kotlin) — see docs/adr/0007 -->
         <archunit.version>1.4.2</archunit.version>
-        <javaparser.version>3.28.2</javaparser.version>
+        <checkstyle.version>10.21.1</checkstyle.version>
+        <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 
         <!-- PostgreSQL JDBC driver, pinned ahead of the version Spring Boot manages (42.7.11 in 4.1.0). Used by the
              explicit <dependencyManagement> entry below, so Dependabot sees and bumps it; drop the pin once Boot
@@ -160,11 +161,6 @@
                 <artifactId>archunit</artifactId>
                 <version>${archunit.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.github.javaparser</groupId>
-                <artifactId>javaparser-core</artifactId>
-                <version>${javaparser.version}</version>
-            </dependency>
 
             <!-- Process test — CIB seven -->
             <dependency>
@@ -245,6 +241,18 @@
                     <groupId>io.miragon</groupId>
                     <artifactId>bpmn-to-code-maven</artifactId>
                     <version>${bpmn-to-code.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven-checkstyle-plugin.version}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.pitest</groupId>

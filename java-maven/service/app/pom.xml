@@ -241,6 +241,29 @@
                 </configuration>
             </plugin>
 
+            <!-- The two source-structure rules bytecode cannot express: no wildcard imports and one
+                 top-level type per file. The generated adapter/process package is not linted. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <configLocation>${maven.multiModuleProjectDirectory}/config/checkstyle/checkstyle.xml</configLocation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                    <failOnViolation>true</failOnViolation>
+                    <violationSeverity>warning</violationSeverity>
+                    <excludes>io/miragon/blueprint/adapter/process/**/*</excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkstyle-check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- One JVM per test class: the process tests and the Spring contexts must not share a JVM. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
