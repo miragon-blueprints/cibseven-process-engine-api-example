@@ -1,0 +1,71 @@
+name: Blueprint Checks
+
+# Checks that only make sense while both variants live side by side; a starter does not carry them.
+on:
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Each variant carries its own copy of the process models, forms, migrations and configuration so it
+  # stays self-contained. The copies must not drift apart. See docs/adr/0013.
+  identical-resources:
+    name: Both variants ship identical resources
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Compare the resources of both variants
+        run: diff -r kotlin-gradle/service/app/src/main/resources java-maven/service/app/src/main/resources
+
+  # scripts/create-starter.sh rewrites paths when it flattens the repo into a single-stack starter.
+  # Build both flat starters so a newly introduced path the script does not know cannot break it.
+  flat-starter:
+    name: Flat starter builds (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: kotlin-gradle
+            build: ./gradlew build --no-daemon
+          - variant: java-maven
+            build: ./mvnw -B verify
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6.0.1
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Create the flat starter
+        run: scripts/create-starter.sh ${{ matrix.variant }} --flat
+
+      - name: Lint BPMN (bpmnlint)
+        run: |
+          npm ci
+          npm run lint:bpmn
+
+      - name: Build the starter
+        run: ${{ matrix.build }}
+
+      - name: Verify the starter still produces the committed OpenAPI contract
+        run: git diff --exit-code -- openapi/openapi.json
+
+      - name: Verify no marker and no path of the blueprint layout is left
+        run: |
+          ! git grep -n -E '(#|<!--) /?variant:|${{ matrix.variant }}/' -- ':!docs/adr' ':!package-lock.json'
