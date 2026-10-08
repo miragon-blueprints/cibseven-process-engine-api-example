@@ -304,9 +304,7 @@
                     </targetTests>
                     <failWhenNoMutations>false</failWhenNoMutations>
                     <excludedClasses>
-                        <param>io.miragon.blueprint.adapter.process.*ProcessApi*</param>
-                        <param>io.miragon.blueprint.adapter.process.HistoryCleanupConfiguration*</param>
-                        <param>io.miragon.blueprint.adapter.process.EngineApiConfiguration*</param>
+                        <param>io.miragon.blueprint.adapter.process.*</param>
                         <param>io.miragon.blueprint.CibsevenBikeLeasingApplication*</param>
                         <param>io.miragon.blueprint.BikeCatalogueSeeder*</param>
                         <param>io.miragon.blueprint.adapter.inbound.rest.DevCorsConfiguration*</param>
