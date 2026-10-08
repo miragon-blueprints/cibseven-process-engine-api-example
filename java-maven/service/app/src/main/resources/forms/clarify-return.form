@@ -1,0 +1,26 @@
+{
+  "components": [
+    {
+      "text": "# Clarify the return with the supplier\n\nThe bike order can be cancelled. Coordinate the physical return with the supplier before the costs are booked.",
+      "type": "text",
+      "id": "Field_intro"
+    },
+    {
+      "label": "Return arrangements confirmed with the supplier",
+      "type": "checkbox",
+      "key": "returnClarified",
+      "id": "Field_returnClarified"
+    },
+    {
+      "label": "Note",
+      "type": "textarea",
+      "key": "clarificationNote",
+      "id": "Field_note"
+    }
+  ],
+  "type": "default",
+  "id": "clarifyReturnForm",
+  "executionPlatform": "Camunda Platform",
+  "executionPlatformVersion": "7.24.0",
+  "schemaVersion": 16
+}

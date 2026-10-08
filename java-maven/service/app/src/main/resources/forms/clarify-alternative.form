@@ -1,0 +1,26 @@
+{
+  "components": [
+    {
+      "text": "# Clarify an alternative bike\n\nThe requested bike is not available. Discuss an alternative with the customer and record the outcome.",
+      "type": "text",
+      "id": "Field_intro"
+    },
+    {
+      "label": "An acceptable alternative was found",
+      "type": "checkbox",
+      "key": "alternativeFound",
+      "id": "Field_alternativeFound"
+    },
+    {
+      "label": "Note",
+      "type": "textarea",
+      "key": "clarificationNote",
+      "id": "Field_note"
+    }
+  ],
+  "type": "default",
+  "id": "clarifyAlternativeForm",
+  "executionPlatform": "Camunda Platform",
+  "executionPlatformVersion": "7.24.0",
+  "schemaVersion": 16
+}
