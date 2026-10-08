@@ -3,6 +3,7 @@ package io.miragon.blueprint.application.service
 import io.miragon.blueprint.application.port.outbound.ContractPort
 import io.miragon.blueprint.application.port.outbound.LeasingApplicationRepository
 import io.miragon.blueprint.application.port.outbound.NotificationPort
+import io.miragon.blueprint.domain.leasing.ApplicationId
 import io.miragon.blueprint.domain.leasing.ContractId
 import io.miragon.blueprint.domain.leasing.testLeasingApplication
 import io.mockk.Runs
@@ -11,7 +12,9 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import java.util.UUID
 
 class SendContractServiceTest {
 
@@ -39,6 +42,21 @@ class SendContractServiceTest {
         verify { contract.issueContract(application.id) }
         verify { repository.save(match { it.contractId == ContractId("CONTRACT-1") }) }
         verify { notification.send(any(), application) }
+        confirmVerified(repository, contract, notification)
+    }
+
+    @Test
+    fun `sendContract fails for an unknown application`() {
+
+        // given: an application id the repository does not know
+        val unknownId = ApplicationId(UUID.fromString("123e4567-e89b-12d3-a456-426614174999"))
+        every { repository.findById(unknownId) } returns null
+
+        // when / then: the lookup fails before a contract is issued, persisted or announced
+        assertThatThrownBy { underTest.sendContract(unknownId) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("Unknown application $unknownId")
+        verify { repository.findById(unknownId) }
         confirmVerified(repository, contract, notification)
     }
 }

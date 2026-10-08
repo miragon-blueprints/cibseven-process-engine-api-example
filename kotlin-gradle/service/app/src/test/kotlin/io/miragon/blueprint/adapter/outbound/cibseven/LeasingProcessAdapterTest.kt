@@ -22,6 +22,7 @@ import io.mockk.slot
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.cibseven.bpm.engine.MismatchingMessageCorrelationException
 import org.junit.jupiter.api.Test
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
@@ -89,26 +90,49 @@ class LeasingProcessAdapterTest {
     }
 
     @Test
-    fun `completeAlternativeClarification skips tasks of other activities, unreadable tasks and other applications`() {
-        val clarifyAlternative = mapOf(CommonRestrictions.ACTIVITY_ID to FlowNodes.UserTaskClarifyAlternative.id.value)
-        val ownApplication = mapOf("applicationId" to id.value.toString())
-        every { userTaskSupport.getAllTasks() } returns listOf(
-            TaskInformation(taskId = "other-activity", meta = mapOf(CommonRestrictions.ACTIVITY_ID to "otherTask")),
-            TaskInformation(taskId = "unreadable", meta = clarifyAlternative),
-            TaskInformation(taskId = "other-application", meta = clarifyAlternative),
-            TaskInformation(taskId = "matching", meta = clarifyAlternative),
-        )
-        every { userTaskSupport.getPayload("other-activity") } returns ownApplication
-        every { userTaskSupport.getPayload("unreadable") } throws IllegalStateException("task gone")
-        every { userTaskSupport.getPayload("other-application") } returns mapOf("applicationId" to "another-id")
-        every { userTaskSupport.getPayload("matching") } returns ownApplication
+    fun `completeAlternativeClarification skips a pooled task whose payload cannot be read`() {
+
+        // given: a stale clarify-alternative task whose payload lookup fails, next to the one of this application
+        every { userTaskSupport.getAllTasks() } returns
+            listOf(clarifyAlternativeTask("task-stale"), clarifyAlternativeTask("task-1"))
+        every { userTaskSupport.getPayload("task-stale") } throws IllegalArgumentException("unknown task")
+        every { userTaskSupport.getPayload("task-1") } returns mapOf("applicationId" to id.value.toString())
         val cmd = slot<CompleteTaskCmd>()
         every { userTaskCompletionApi.completeTask(capture(cmd)) } returns CompletableFuture.completedFuture(Empty)
 
+        // when: the clarification ends without an alternative
         underTest.completeAlternativeClarification(id, alternativeFound = false, bikeId = null)
 
-        assertThat(cmd.captured.taskId).isEqualTo("matching")
+        // then: the failing task counts as no match; the matching task is completed with the decision only
+        assertThat(cmd.captured.taskId).isEqualTo("task-1")
         assertThat(cmd.captured.get()).isEqualTo(mapOf("alternativeFound" to false))
+    }
+
+    @Test
+    fun `completeAlternativeClarification ignores pooled tasks of other activities and applications`() {
+
+        // given: a task of another activity for this application and a clarify-alternative task of another
+        // application, both pooled before the clarify-alternative task of this application
+        val otherActivity = TaskInformation(
+            taskId = "task-other-activity",
+            meta = mapOf(CommonRestrictions.ACTIVITY_ID to "userTask_somethingElse"),
+        )
+        every { userTaskSupport.getAllTasks() } returns
+            listOf(otherActivity, clarifyAlternativeTask("task-other-application"), clarifyAlternativeTask("task-1"))
+        every { userTaskSupport.getPayload("task-other-activity") } returns
+            mapOf("applicationId" to id.value.toString())
+        every { userTaskSupport.getPayload("task-other-application") } returns
+            mapOf("applicationId" to UUID.randomUUID().toString())
+        every { userTaskSupport.getPayload("task-1") } returns mapOf("applicationId" to id.value.toString())
+        val cmd = slot<CompleteTaskCmd>()
+        every { userTaskCompletionApi.completeTask(capture(cmd)) } returns CompletableFuture.completedFuture(Empty)
+
+        // when: an alternative bike is selected from the outside
+        underTest.completeAlternativeClarification(id, alternativeFound = true, bikeId = BikeId("BIKE-42"))
+
+        // then: only the clarify-alternative task of this application is completed
+        verify(exactly = 1) { userTaskCompletionApi.completeTask(any()) }
+        assertThat(cmd.captured.taskId).isEqualTo("task-1")
     }
 
     @Test
@@ -129,11 +153,55 @@ class LeasingProcessAdapterTest {
     }
 
     @Test
-    fun `a failed correlation surfaces the engine exception instead of the async wrapper`() {
-        val engineFailure = IllegalStateException("no matching execution")
-        every { correlationApi.correlateMessage(any()) } returns CompletableFuture.failedFuture(engineFailure)
+    fun `completeAlternativeClarification propagates the interruption when the task wait is interrupted`() {
 
-        assertThatThrownBy { underTest.correlateContractSigned(id) }.isSameAs(engineFailure)
+        // given: no clarify-alternative task in the pool yet and an interrupted caller
+        every { userTaskSupport.getAllTasks() } returns emptyList()
+        Thread.currentThread().interrupt()
+        try {
+            // when / then: the wait aborts at once with the InterruptedException itself
+            assertThatThrownBy { underTest.completeAlternativeClarification(id, alternativeFound = true, bikeId = null) }
+                .isExactlyInstanceOf(InterruptedException::class.java)
+            // and: the interrupt flag was consumed by the aborted wait
+            assertThat(Thread.currentThread().isInterrupted).isFalse()
+        } finally {
+            Thread.interrupted()
+        }
+        verify(exactly = 1) { userTaskSupport.getAllTasks() }
+        verify(exactly = 0) { userTaskCompletionApi.completeTask(any()) }
+    }
+
+    @Test
+    fun `correlation rethrows an unchecked engine failure unwrapped`() {
+
+        // given: the engine rejects the correlation, e.g. because the token already left the wait state
+        val failure = MismatchingMessageCorrelationException("no execution waits for the message")
+        every { correlationApi.correlateMessage(any()) } returns CompletableFuture.failedFuture(failure)
+
+        // when / then: the very engine exception surfaces (the REST advice maps it to 409), not the async wrapper
+        assertThatThrownBy { underTest.correlateContractSigned(id) }.isSameAs(failure)
+    }
+
+    @Test
+    fun `correlation rethrows an error unwrapped`() {
+
+        // given: the correlation fails with an Error
+        val failure = Error("engine failure")
+        every { correlationApi.correlateMessage(any()) } returns CompletableFuture.failedFuture(failure)
+
+        // when / then: the Error itself surfaces, not the async wrapper
+        assertThatThrownBy { underTest.correlateHandoverReported(id) }.isSameAs(failure)
+    }
+
+    @Test
+    fun `correlation rethrows a checked cause unwrapped`() {
+
+        // given: the correlation fails with a checked exception
+        val failure = Exception("checked failure")
+        every { correlationApi.correlateMessage(any()) } returns CompletableFuture.failedFuture(failure)
+
+        // when / then: the checked exception itself surfaces, not the async wrapper
+        assertThatThrownBy { underTest.correlateApplicationWithdrawn(id) }.isSameAs(failure)
     }
 
     @Test
@@ -176,4 +244,10 @@ class LeasingProcessAdapterTest {
         assertThat(cmd.captured.correlation.get().correlationKey).isEqualTo(id.value.toString())
         assertThat(cmd.captured.restrictions["useGlobalCorrelationKey"]).isEqualTo("true")
     }
+
+    private fun clarifyAlternativeTask(taskId: String) =
+        TaskInformation(
+            taskId = taskId,
+            meta = mapOf(CommonRestrictions.ACTIVITY_ID to FlowNodes.UserTaskClarifyAlternative.id.value),
+        )
 }

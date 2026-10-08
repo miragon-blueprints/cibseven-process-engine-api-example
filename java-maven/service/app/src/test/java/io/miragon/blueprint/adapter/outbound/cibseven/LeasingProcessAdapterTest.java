@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -142,6 +143,25 @@ class LeasingProcessAdapterTest {
     }
 
     @Test
+    void completeAlternativeClarification_waits_for_the_task_to_be_delivered() {
+
+        // given: a pool that is still empty on the first lookup and holds the task on the second
+        TaskInformation deliveredTask = clarifyAlternativeTask("task-1");
+        when(userTaskSupport.getAllTasks()).thenReturn(List.of(), List.of(deliveredTask));
+        when(userTaskSupport.getPayload("task-1")).thenReturn(Map.of("applicationId", id.value().toString()));
+        when(userTaskCompletionApi.completeTask(any())).thenReturn(CompletableFuture.completedFuture(Empty.INSTANCE));
+
+        // when: the clarification is completed before the task was delivered
+        underTest.completeAlternativeClarification(id, true, null);
+
+        // then: the lookup is repeated and the delivered task is completed
+        ArgumentCaptor<CompleteTaskCmd> cmd = ArgumentCaptor.forClass(CompleteTaskCmd.class);
+        verify(userTaskCompletionApi).completeTask(cmd.capture());
+        assertThat(cmd.getValue().getTaskId()).isEqualTo("task-1");
+        verify(userTaskSupport, times(2)).getAllTasks();
+    }
+
+    @Test
     void completeAlternativeClarification_fails_and_keeps_the_interrupt_when_the_task_wait_is_interrupted() {
 
         // given: no clarify-alternative task in the pool yet and an interrupted caller
@@ -215,6 +235,19 @@ class LeasingProcessAdapterTest {
         assertThatThrownBy(() -> underTest.correlateApplicationWithdrawn(id))
                 .isInstanceOf(CompletionException.class)
                 .cause().isSameAs(failure);
+    }
+
+    @Test
+    void a_failed_correlation_without_an_engine_cause_surfaces_the_async_wrapper_itself() {
+
+        // given: a correlation whose async wrapper carries no cause
+        CompletionException causelessFailure = new CompletionException("correlation aborted", null);
+        CompletableFuture<Empty> failingCorrelation = mock();
+        when(failingCorrelation.join()).thenThrow(causelessFailure);
+        when(correlationApi.correlateMessage(any())).thenReturn(failingCorrelation);
+
+        // when / then: the async wrapper itself surfaces
+        assertThatThrownBy(() -> underTest.correlateContractSigned(id)).isSameAs(causelessFailure);
     }
 
     private void assertCorrelation(String expectedMessage, Runnable action) {

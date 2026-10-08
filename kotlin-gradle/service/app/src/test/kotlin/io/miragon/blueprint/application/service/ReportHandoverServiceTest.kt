@@ -12,6 +12,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -56,6 +57,23 @@ class ReportHandoverServiceTest {
         verify { process.correlateHandoverReported(id) }
         verify(exactly = 0) { repository.findById(any()) }
         verify(exactly = 0) { repository.save(any()) }
+        confirmVerified(process, repository)
+    }
+
+    @Test
+    fun `reportHandover fails for an unknown application`() {
+
+        // given: a correlated handover for an application the repository does not know
+        val unknownId = ApplicationId(UUID.fromString("123e4567-e89b-12d3-a456-426614174999"))
+        every { process.correlateHandoverReported(unknownId) } just Runs
+        every { repository.findById(unknownId) } returns null
+
+        // when / then: the lookup fails and nothing is persisted
+        assertThatThrownBy { underTest.reportHandover(unknownId) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("Unknown application $unknownId")
+        verify { process.correlateHandoverReported(unknownId) }
+        verify { repository.findById(unknownId) }
         confirmVerified(process, repository)
     }
 }

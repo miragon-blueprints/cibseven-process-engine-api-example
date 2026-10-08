@@ -11,6 +11,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import java.util.UUID
 
@@ -55,6 +56,23 @@ class WithdrawApplicationServiceTest {
         verify { process.correlateApplicationWithdrawn(id) }
         verify(exactly = 0) { repository.findById(any()) }
         verify(exactly = 0) { repository.save(any()) }
+        confirmVerified(process, repository)
+    }
+
+    @Test
+    fun `withdraw fails for an unknown application`() {
+
+        // given: a correlated withdrawal for an application the repository does not know
+        val unknownId = ApplicationId(UUID.fromString("123e4567-e89b-12d3-a456-426614174999"))
+        every { process.correlateApplicationWithdrawn(unknownId) } just Runs
+        every { repository.findById(unknownId) } returns null
+
+        // when / then: the lookup fails and nothing is persisted
+        assertThatThrownBy { underTest.withdraw(unknownId) }
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessage("Unknown application $unknownId")
+        verify { process.correlateApplicationWithdrawn(unknownId) }
+        verify { repository.findById(unknownId) }
         confirmVerified(process, repository)
     }
 }
