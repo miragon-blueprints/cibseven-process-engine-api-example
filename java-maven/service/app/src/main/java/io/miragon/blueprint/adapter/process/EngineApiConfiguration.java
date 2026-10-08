@@ -4,7 +4,7 @@ import dev.bpmcrafters.processengineapi.CommonRestrictions;
 import dev.bpmcrafters.processengineapi.adapter.cibseven.embedded.shared.EngineCommandExecutor;
 import dev.bpmcrafters.processengineapi.task.TaskSubscriptionApi;
 import dev.bpmcrafters.processengineapi.task.support.UserTaskSupport;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,7 +34,7 @@ public class EngineApiConfiguration {
         userTaskSupport.subscribe(
                 taskSubscriptionApi,
                 CommonRestrictions.builder().build(),
-                Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue(),
+                FlowNodes.UserTaskClarifyAlternative.ELEMENT_ID,
                 null);
         return userTaskSupport;
     }

@@ -13,7 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
 import io.miragon.blueprint.adapter.process.CancelBikeOrderProcessApi;
 import io.miragon.blueprint.application.port.inbound.ActivateLeasingUseCase;
 import io.miragon.blueprint.application.port.inbound.BookCancellationCostsUseCase;
@@ -36,6 +36,7 @@ import io.miragon.blueprint.domain.leasing.CustomerName;
 import io.miragon.blueprint.domain.leasing.Email;
 import io.miragon.blueprint.domain.leasing.LeasingApplication;
 import io.miragon.blueprint.domain.leasing.LeasingStatus;
+import io.miragon.bpmn.runtime.path.PathWalk;
 import java.time.LocalDateTime;
 import java.util.Map;
 import org.cibseven.bpm.engine.ProcessEngine;
@@ -131,23 +132,32 @@ class BikeLeasingProcessTest {
         process.correlateHandoverReported(id); // -> withdrawal-period timer
         continueToNextWaitState(processEngine);
 
-        fireTimer(processEngine, Elements.EVENT_WITHDRAWAL_PERIOD_ELAPSED);
+        fireTimer(processEngine, FlowNodes.EventWithdrawalPeriodElapsed.INSTANCE);
         continueToNextWaitState(processEngine);
 
         assertThat(instance)
             .isEnded()
             .hasPassedInOrder(
-                Elements.SERVICE_TASK_VALIDATE_APPLICATION.getValue(),
-                Elements.BUSINESS_RULE_TASK_CHECK_CREDIT_RATING.getValue(),
-                Elements.SERVICE_TASK_SEND_CONTRACT.getValue(),
-                Elements.SERVICE_TASK_ISSUE_INSURANCE_POLICY.getValue(),
-                Elements.EVENT_HANDOVER_REPORTED.getValue(),
-                Elements.SERVICE_TASK_ACTIVATE_LEASING.getValue(),
-                Elements.END_EVENT_LEASING_ACTIVE.getValue())
+                pathUntilContractSigned()
+                    .then(next -> next.gatewayFork())
+                    .then(next -> next.serviceTaskIssueInsurancePolicy())
+                    .then(next -> next.gatewayJoin())
+                    .then(next -> next.eventHandoverReported())
+                    .then(next -> next.eventWithdrawalPeriodElapsed())
+                    .then(next -> next.serviceTaskActivateLeasing())
+                    .end(next -> next.endEventLeasingActive())
+                    .getIds())
+            .hasPassedInOrder(
+                PathWalk.from(FlowNodes.GatewayFork.INSTANCE)
+                    .then(next -> next.gatewayBikeSourceJoin())
+                    .then(next -> next.serviceTaskOrderBike())
+                    .then(next -> next.gatewayBikeAvailable())
+                    .then(next -> next.gatewayJoin())
+                    .getIds())
             .hasNotPassed(
-                Elements.END_EVENT_APPLICATION_REJECTED.getValue(),
-                Elements.END_EVENT_APPLICATION_CANCELLED.getValue(),
-                Elements.END_EVENT_CONTRACT_CANCELLED.getValue());
+                FlowNodes.EndEventApplicationRejected.ELEMENT_ID,
+                FlowNodes.EndEventApplicationCancelled.ELEMENT_ID,
+                FlowNodes.EndEventContractCancelled.ELEMENT_ID);
 
         verify(sendContractUseCase, times(1)).sendContract(id);
         verify(issueInsurancePolicyUseCase, times(1)).issuePolicy(id);
@@ -161,17 +171,26 @@ class BikeLeasingProcessTest {
 
         continueToNextWaitState(processEngine); // parks on the signature wait state
 
-        fireTimer(processEngine, Elements.EVENT_SIGNATURE_DEADLINE); // deadline -> escalation -> rejection
+        fireTimer(processEngine, FlowNodes.EventSignatureDeadline.INSTANCE); // deadline -> escalation -> rejection
         continueToNextWaitState(processEngine);
 
         assertThat(instance)
             .isEnded()
-            .hasPassed(
-                Elements.EVENT_SIGNATURE_DEADLINE.getValue(),
-                Elements.EVENT_CONTRACT_NOT_SIGNED.getValue(),
-                Elements.SERVICE_TASK_SEND_REJECTION.getValue(),
-                Elements.END_EVENT_APPLICATION_REJECTED.getValue())
-            .hasNotPassed(Elements.END_EVENT_LEASING_ACTIVE.getValue());
+            .hasPassedInOrder(
+                pathUntilCreditRatingChecked()
+                    .onto(next -> next.subProcessConcludeContract())
+                    .inside(FlowNodes.SubProcessConcludeContract.INSTANCE, start ->
+                        pathUntilSignatureAwaited(start)
+                            .then(next -> next.eventSignatureDeadline())
+                            .end(next -> next.endEventNotSigned()))
+                    .interruptedBy(
+                        FlowNodes.SubProcessConcludeContract.INSTANCE,
+                        next -> next.eventContractNotSigned())
+                    .then(next -> next.gatewayRejectionJoin())
+                    .then(next -> next.serviceTaskSendRejection())
+                    .end(next -> next.endEventApplicationRejected())
+                    .getIds())
+            .hasNotPassed(FlowNodes.EndEventLeasingActive.ELEMENT_ID);
 
         verify(rejectApplicationUseCase, times(1)).reject(id);
     }
@@ -180,8 +199,19 @@ class BikeLeasingProcessTest {
     void not_solvent_the_DMN_routes_the_application_straight_to_rejection() throws InterruptedException {
         // age below 18 cannot sign a leasing contract, so the DMN returns solvent = false
         ApplicationId id = submit(15, 3500.0);
+        ProcessInstance instance = findProcessInstance(runtimeService, id);
 
         continueToNextWaitState(processEngine); // validate -> DMN -> not solvent -> rejection -> end
+
+        assertThat(instance)
+            .isEnded()
+            .hasPassedInOrder(
+                pathUntilCreditRatingChecked()
+                    .then(next -> next.gatewayRejectionJoin())
+                    .then(next -> next.serviceTaskSendRejection())
+                    .end(next -> next.endEventApplicationRejected())
+                    .getIds())
+            .hasNotPassed(FlowNodes.SubProcessConcludeContract.ELEMENT_ID);
 
         verify(rejectApplicationUseCase, times(1)).reject(id);
         verify(sendContractUseCase, never()).sendContract(any());
@@ -205,14 +235,19 @@ class BikeLeasingProcessTest {
         assertThat(instance)
             .isEnded()
             .hasPassedInOrder(
-                Elements.SERVICE_TASK_VALIDATE_APPLICATION.getValue(),
-                Elements.EVENT_APPLICATION_INVALID.getValue(),
-                Elements.SERVICE_TASK_SEND_REJECTION.getValue(),
-                Elements.END_EVENT_APPLICATION_REJECTED.getValue())
+                PathWalk.from(FlowNodes.StartEventLeasingRequestReceived.INSTANCE)
+                    .then(next -> next.serviceTaskValidateApplication())
+                    .interruptedBy(
+                        FlowNodes.ServiceTaskValidateApplication.INSTANCE,
+                        next -> next.eventApplicationInvalid())
+                    .then(next -> next.gatewayRejectionJoin())
+                    .then(next -> next.serviceTaskSendRejection())
+                    .end(next -> next.endEventApplicationRejected())
+                    .getIds())
             .hasNotPassed(
-                Elements.BUSINESS_RULE_TASK_CHECK_CREDIT_RATING.getValue(),
-                Elements.SERVICE_TASK_SEND_CONTRACT.getValue(),
-                Elements.END_EVENT_LEASING_ACTIVE.getValue());
+                FlowNodes.BusinessRuleTaskCheckCreditRating.ELEMENT_ID,
+                FlowNodes.SubProcessConcludeContract.ELEMENT_ID,
+                FlowNodes.EndEventLeasingActive.ELEMENT_ID);
 
         verify(validateApplicationUseCase, times(1)).validate(id);
         verify(rejectApplicationUseCase, times(1)).reject(id);
@@ -239,7 +274,7 @@ class BikeLeasingProcessTest {
         Task task =
             taskService
                 .createTaskQuery()
-                .taskDefinitionKey(CancelBikeOrderProcessApi.Elements.USER_TASK_CLARIFY_RETURN.getValue())
+                .taskDefinitionKey(CancelBikeOrderProcessApi.FlowNodes.UserTaskClarifyReturn.ELEMENT_ID)
                 .singleResult();
         taskService.complete(task.getId(), Map.of("returnClarified", true));
         continueToNextWaitState(processEngine);
@@ -247,12 +282,21 @@ class BikeLeasingProcessTest {
         assertThat(instance)
             .isEnded()
             .hasPassed(
-                Elements.SERVICE_TASK_CANCEL_CONTRACT.getValue(),
-                Elements.SERVICE_TASK_CANCEL_POLICY.getValue(),
-                Elements.CALL_ACTIVITY_CANCEL_BIKE_ORDER.getValue(),
-                Elements.SERVICE_TASK_SEND_CANCELLATION_CONFIRMATION.getValue(),
-                Elements.END_EVENT_APPLICATION_CANCELLED.getValue())
-            .hasNotPassed(Elements.END_EVENT_LEASING_ACTIVE.getValue());
+                PathWalk.from(FlowNodes.StartEventApplicationWithdrawn.INSTANCE)
+                    .then(next -> next.eventReverseApplication())
+                    .throwingCompensation(
+                        FlowNodes.EventCompensateContract.INSTANCE,
+                        next -> next.serviceTaskCancelContract())
+                    .throwingCompensation(
+                        FlowNodes.EventCompensateInsurance.INSTANCE,
+                        next -> next.serviceTaskCancelPolicy())
+                    .throwingCompensation(
+                        FlowNodes.EventCompensateOrder.INSTANCE,
+                        next -> next.callActivityCancelBikeOrder())
+                    .then(next -> next.serviceTaskSendCancellationConfirmation())
+                    .end(next -> next.endEventApplicationCancelled())
+                    .getDistinctIds())
+            .hasNotPassed(FlowNodes.EndEventLeasingActive.ELEMENT_ID);
 
         // External-task delivery is at-least-once: while compensation runs several handlers in
         // parallel, an async continuation firing on the test thread can force an optimistic-locking
@@ -285,20 +329,56 @@ class BikeLeasingProcessTest {
 
         process.correlateHandoverReported(id);
         continueToNextWaitState(processEngine);
-        fireTimer(processEngine, Elements.EVENT_WITHDRAWAL_PERIOD_ELAPSED);
+        fireTimer(processEngine, FlowNodes.EventWithdrawalPeriodElapsed.INSTANCE);
         continueToNextWaitState(processEngine);
 
         assertThat(instance)
             .isEnded()
-            .hasPassed(
-                Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue(),
-                Elements.SERVICE_TASK_ORDER_BIKE.getValue(),
-                Elements.END_EVENT_LEASING_ACTIVE.getValue())
+            .hasPassedInOrder(
+                PathWalk.from(FlowNodes.GatewayFork.INSTANCE)
+                    .then(next -> next.gatewayBikeSourceJoin())
+                    .then(next -> next.serviceTaskOrderBike())
+                    .then(next -> next.gatewayBikeAvailable())
+                    .then(next -> next.userTaskClarifyAlternative())
+                    .then(next -> next.gatewayAlternativeFound())
+                    .then(next -> next.gatewayBikeSourceJoin())
+                    .then(next -> next.serviceTaskOrderBike())
+                    .then(next -> next.gatewayBikeAvailable())
+                    .then(next -> next.gatewayJoin())
+                    .then(next -> next.eventHandoverReported())
+                    .then(next -> next.eventWithdrawalPeriodElapsed())
+                    .then(next -> next.serviceTaskActivateLeasing())
+                    .end(next -> next.endEventLeasingActive())
+                    .getIds())
             .hasNotPassed(
-                Elements.END_EVENT_CONTRACT_CANCELLED.getValue(),
-                Elements.END_EVENT_APPLICATION_REJECTED.getValue());
+                FlowNodes.EndEventContractCancelled.ELEMENT_ID,
+                FlowNodes.EndEventApplicationRejected.ELEMENT_ID);
 
         verify(orderBikeUseCase, times(2)).orderBike(id);
+    }
+
+    private PathWalk<FlowNodes.GatewayIsSolvent, FlowNodes.GatewayIsSolvent.Next> pathUntilCreditRatingChecked() {
+        return PathWalk.from(FlowNodes.StartEventLeasingRequestReceived.INSTANCE)
+            .then(next -> next.serviceTaskValidateApplication())
+            .then(next -> next.businessRuleTaskCheckCreditRating())
+            .then(next -> next.gatewayIsSolvent());
+    }
+
+    private PathWalk<FlowNodes.GatewayAwaitSignature, FlowNodes.GatewayAwaitSignature.Next> pathUntilSignatureAwaited(
+        FlowNodes.SubProcessConcludeContract.Start start) {
+        return PathWalk.from(start.startEventCustomerEligible())
+            .then(next -> next.serviceTaskSendContract())
+            .then(next -> next.gatewayAwaitSignature());
+    }
+
+    private PathWalk<FlowNodes.SubProcessConcludeContract, FlowNodes.SubProcessConcludeContract.Next>
+        pathUntilContractSigned() {
+        return pathUntilCreditRatingChecked()
+            .onto(next -> next.subProcessConcludeContract())
+            .inside(FlowNodes.SubProcessConcludeContract.INSTANCE, start ->
+                pathUntilSignatureAwaited(start)
+                    .then(next -> next.eventContractSigned())
+                    .end(next -> next.endEventContractValid()));
     }
 
     private ApplicationId submit(int age, double income) {

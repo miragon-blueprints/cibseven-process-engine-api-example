@@ -10,9 +10,8 @@ import dev.bpmcrafters.processengineapi.task.CompleteTaskCmd;
 import dev.bpmcrafters.processengineapi.task.TaskInformation;
 import dev.bpmcrafters.processengineapi.task.UserTaskCompletionApi;
 import dev.bpmcrafters.processengineapi.task.support.UserTaskSupport;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Messages;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Variables;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
+import io.miragon.blueprint.adapter.process.Messages;
 import io.miragon.blueprint.application.port.outbound.LeasingProcess;
 import io.miragon.blueprint.domain.bike.BikeId;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
@@ -60,12 +59,12 @@ public class LeasingProcessAdapter implements LeasingProcess {
     public void submitRequest(LeasingApplication application) {
         String key = application.id().value().toString();
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put(Variables.StartEventLeasingRequestReceived.APPLICATION_ID.getValue(), key);
-        payload.put(Variables.StartEventLeasingRequestReceived.BIKE_ID.getValue(), application.bikeId().value());
+        payload.put(FlowNodes.StartEventLeasingRequestReceived.Variables.APPLICATION_ID.getValue(), key);
+        payload.put(FlowNodes.StartEventLeasingRequestReceived.Variables.BIKE_ID.getValue(), application.bikeId().value());
         payload.put(
-                Variables.StartEventLeasingRequestReceived.MONTHLY_NET_INCOME.getValue(),
+                FlowNodes.StartEventLeasingRequestReceived.Variables.MONTHLY_NET_INCOME.getValue(),
                 application.monthlyNetIncome());
-        payload.put(Variables.StartEventLeasingRequestReceived.AGE.getValue(), application.age());
+        payload.put(FlowNodes.StartEventLeasingRequestReceived.Variables.AGE.getValue(), application.age());
         // Preserve the engine business key and seed the global correlation variable.
         payload.put(CommonRestrictions.BUSINESS_KEY, key);
         payload.put(CommonRestrictions.CORRELATION_KEY, key);
@@ -128,10 +127,10 @@ public class LeasingProcessAdapter implements LeasingProcess {
     public void completeAlternativeClarification(ApplicationId id, boolean alternativeFound, BikeId bikeId) {
         String taskId = awaitClarifyAlternativeTaskId(id);
         Map<String, Object> variables = new LinkedHashMap<>();
-        variables.put(Variables.UserTaskClarifyAlternative.ALTERNATIVE_FOUND.getValue(), alternativeFound);
+        variables.put(FlowNodes.UserTaskClarifyAlternative.Variables.ALTERNATIVE_FOUND.getValue(), alternativeFound);
         // The re-order reads the same start-injected bike variable, so reuse its name.
         if (bikeId != null) {
-            variables.put(Variables.StartEventLeasingRequestReceived.BIKE_ID.getValue(), bikeId.value());
+            variables.put(FlowNodes.StartEventLeasingRequestReceived.Variables.BIKE_ID.getValue(), bikeId.value());
         }
         userTaskCompletionApi.completeTask(new CompleteTaskCmd(taskId, variables)).join();
     }
@@ -143,12 +142,12 @@ public class LeasingProcessAdapter implements LeasingProcess {
      */
     private String awaitClarifyAlternativeTaskId(ApplicationId id) {
         String applicationId = id.value().toString();
-        String applicationIdKey = Variables.StartEventLeasingRequestReceived.APPLICATION_ID.getValue();
+        String applicationIdKey = FlowNodes.StartEventLeasingRequestReceived.Variables.APPLICATION_ID.getValue();
         for (int attempt = 0; attempt < TASK_LOOKUP_ATTEMPTS; attempt++) {
             Optional<TaskInformation> task = userTaskSupport.getAllTasks().stream()
                     .filter(it -> Objects.equals(
                             it.getMeta().get(CommonRestrictions.ACTIVITY_ID),
-                            Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue()))
+                            FlowNodes.UserTaskClarifyAlternative.ELEMENT_ID))
                     .filter(it -> hasApplicationId(it, applicationIdKey, applicationId))
                     .findFirst();
             if (task.isPresent()) {
@@ -167,7 +166,7 @@ public class LeasingProcessAdapter implements LeasingProcess {
             }
         }
         throw new IllegalStateException(
-                "No open '" + Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue() + "' task for application "
+                "No open '" + FlowNodes.UserTaskClarifyAlternative.ELEMENT_ID + "' task for application "
                         + applicationId);
     }
 

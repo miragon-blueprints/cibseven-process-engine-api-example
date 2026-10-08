@@ -20,8 +20,8 @@ import dev.bpmcrafters.processengineapi.task.CompleteTaskCmd;
 import dev.bpmcrafters.processengineapi.task.TaskInformation;
 import dev.bpmcrafters.processengineapi.task.UserTaskCompletionApi;
 import dev.bpmcrafters.processengineapi.task.support.UserTaskSupport;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Messages;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
+import io.miragon.blueprint.adapter.process.Messages;
 import io.miragon.blueprint.domain.bike.BikeId;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
 import io.miragon.blueprint.domain.leasing.LeasingApplication;
@@ -236,6 +236,6 @@ class LeasingProcessAdapterTest {
     private static TaskInformation clarifyAlternativeTask(String taskId) {
         return new TaskInformation(
                 taskId,
-                Map.of(CommonRestrictions.ACTIVITY_ID, Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue()));
+                Map.of(CommonRestrictions.ACTIVITY_ID, FlowNodes.UserTaskClarifyAlternative.ELEMENT_ID));
     }
 }

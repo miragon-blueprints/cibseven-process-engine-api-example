@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
 import io.miragon.blueprint.application.port.outbound.TaskInboxPort;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
 import java.time.Instant;
@@ -48,7 +48,7 @@ class TaskInboxAdapterTest {
         assertThat(result.get(0).applicationId()).isEqualTo(ApplicationId.of(applicationId));
         assertThat(result.get(0).waitingSince())
                 .isEqualTo(LocalDateTime.ofInstant(Instant.EPOCH, ZoneId.systemDefault()));
-        verify(taskQuery).taskDefinitionKey(Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue());
+        verify(taskQuery).taskDefinitionKey(FlowNodes.UserTaskClarifyAlternative.ELEMENT_ID);
         verify(instanceQuery).processInstanceIds(Set.of("proc-1"));
     }
 

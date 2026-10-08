@@ -49,9 +49,8 @@
         <springdoc.version>3.1.0</springdoc.version>
 
         <!-- BPMN-to-code (generates the typed process API from the *.bpmn models; testing = model
-             validation). The Maven plugin and the runtime share one version. -->
-        <bpmn-to-code.version>3.1.0</bpmn-to-code.version>
-        <bpmn-to-code-testing.version>5.1.0</bpmn-to-code-testing.version>
+             validation). The Maven plugin, the runtime and the testing library share one version. -->
+        <bpmn-to-code.version>6.2.0</bpmn-to-code.version>
 
         <!-- Architecture tests: ArchUnit for the bytecode rules, JavaParser for the source rules
              (replaces Konsist, which only reads Kotlin) -->
@@ -152,7 +151,7 @@
             <dependency>
                 <groupId>io.miragon</groupId>
                 <artifactId>bpmn-to-code-testing</artifactId>
-                <version>${bpmn-to-code-testing.version}</version>
+                <version>${bpmn-to-code.version}</version>
             </dependency>
 
             <!-- Architecture tests -->
@@ -204,7 +203,7 @@
                  Re-check all four against `./mvnw -pl service/app -am test-compile dependency:tree -Dverbose`
                  whenever Spring Boot, the process-engine-adapter BOM, springdoc or JGiven is bumped. -->
             <dependency>
-                <!-- 8.0.4: process-engine-api 1.7, process-engine-worker 0.8.4, bpmn-to-code-testing 5.1.0;
+                <!-- 8.0.4: process-engine-api 1.7, process-engine-worker 0.8.4, bpmn-to-code-testing 6.2.0;
                      7.0.13 (nearest): process-engine-adapter-cib-seven-embedded 2026.07.1 -->
                 <groupId>io.github.oshai</groupId>
                 <artifactId>kotlin-logging-jvm</artifactId>

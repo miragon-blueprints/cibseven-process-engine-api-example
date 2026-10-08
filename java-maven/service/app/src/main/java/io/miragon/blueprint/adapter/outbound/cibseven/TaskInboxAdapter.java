@@ -1,6 +1,6 @@
 package io.miragon.blueprint.adapter.outbound.cibseven;
 
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Elements;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
 import io.miragon.blueprint.application.port.outbound.TaskInboxPort;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
 import java.time.ZoneId;
@@ -45,7 +45,7 @@ public class TaskInboxAdapter implements TaskInboxPort {
 
     @Override
     public List<TaskInboxPort.OpenClarification> findOpenClarifications() {
-        List<Task> tasks = findOpenTasks(Elements.USER_TASK_CLARIFY_ALTERNATIVE.getValue());
+        List<Task> tasks = findOpenTasks(FlowNodes.UserTaskClarifyAlternative.ELEMENT_ID);
         Map<String, String> businessKeys =
                 businessKeysById(tasks.stream().map(Task::getProcessInstanceId).toList());
         List<TaskInboxPort.OpenClarification> clarifications = new ArrayList<>();

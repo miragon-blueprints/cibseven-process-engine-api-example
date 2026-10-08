@@ -2,8 +2,8 @@ package io.miragon.blueprint.adapter.inbound.cibseven;
 
 import dev.bpmcrafters.processengine.worker.ProcessEngineWorker;
 import dev.bpmcrafters.processengine.worker.Variable;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.ServiceTasks;
-import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.Variables;
+import io.miragon.blueprint.adapter.process.ServiceTasks;
+import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
 import io.miragon.blueprint.application.port.inbound.OrderBikeUseCase;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
 import java.util.LinkedHashMap;
@@ -27,9 +27,9 @@ public class OrderBikeWorker {
     public Map<String, Object> orderBike(@Variable String applicationId) {
         OrderBikeUseCase.Result result = useCase.orderBike(ApplicationId.of(applicationId));
         Map<String, Object> variables = new LinkedHashMap<>();
-        variables.put(Variables.ServiceTaskOrderBike.ORDER_ID.getValue(),
+        variables.put(FlowNodes.ServiceTaskOrderBike.Variables.ORDER_ID.getValue(),
                 result.orderId() == null ? null : result.orderId().value());
-        variables.put(Variables.ServiceTaskOrderBike.BIKE_AVAILABLE.getValue(), result.bikeAvailable());
+        variables.put(FlowNodes.ServiceTaskOrderBike.Variables.BIKE_AVAILABLE.getValue(), result.bikeAvailable());
         return variables;
     }
 }

@@ -2,8 +2,8 @@ package io.miragon.blueprint.adapter.inbound.cibseven;
 
 import dev.bpmcrafters.processengine.worker.ProcessEngineWorker;
 import dev.bpmcrafters.processengine.worker.Variable;
-import io.miragon.blueprint.adapter.process.CancelBikeOrderProcessApi.ServiceTasks;
-import io.miragon.blueprint.adapter.process.CancelBikeOrderProcessApi.Variables;
+import io.miragon.blueprint.adapter.process.ServiceTasks;
+import io.miragon.blueprint.adapter.process.CancelBikeOrderProcessApi.FlowNodes;
 import io.miragon.blueprint.application.port.inbound.RequestOrderCancellationUseCase;
 import io.miragon.blueprint.domain.bike.OrderId;
 import java.util.Map;
@@ -25,6 +25,6 @@ public class RequestCancellationWorker {
     @ProcessEngineWorker(topic = ServiceTasks.REQUEST_CANCELLATION)
     public Map<String, Object> requestCancellation(@Variable String orderId) {
         boolean cancellationPossible = useCase.requestCancellation(new OrderId(orderId));
-        return Map.of(Variables.ServiceTaskRequestCancellation.CANCELLATION_POSSIBLE.getValue(), cancellationPossible);
+        return Map.of(FlowNodes.ServiceTaskRequestCancellation.Variables.CANCELLATION_POSSIBLE.getValue(), cancellationPossible);
     }
 }
