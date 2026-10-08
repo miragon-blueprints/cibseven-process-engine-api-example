@@ -163,8 +163,8 @@ rules:
   test requires every service task to be an external task with a topic.
 - Since bpmn-to-code 6 the API is node-centric: `<Process>ProcessApi.FlowNodes.<Node>` carries the
   element (`.id`, `ELEMENT_ID`), its `Variables` and its successors (`Next`). Process tests assert
-  the walked path as a compile-checked path (`ProcessPath` in Kotlin, `PathWalk` in Java) instead of
-  hand-maintained element-id lists.
+  the walked path as a compile-checked path built from these nodes instead of hand-maintained
+  element-id lists.
 - `bpmnlint` tooling lives at the **repo root** (`package.json`, `.bpmnlintrc`): `npm ci && npm run
   lint:bpmn`. It also runs on staged `.bpmn` via `.githooks/pre-commit` (install: `npm run hooks:install`).
 
