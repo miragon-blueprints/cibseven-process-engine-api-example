@@ -18,11 +18,21 @@ archive = "docker compose -f stack/docker-compose.yml down -v || true"
 [scripts.run.infra]
 command = "docker compose -f stack/docker-compose.yml up"
 
-[scripts.run.backend]
-command = "./gradlew :service:app:bootRun"
+# variant:kotlin-gradle
+[scripts.run.backend-kotlin]
+command = "cd kotlin-gradle && ./gradlew :service:app:bootRun"
 
-[scripts.run.test]
-command = "./gradlew build"
+[scripts.run.test-kotlin]
+command = "cd kotlin-gradle && ./gradlew build"
+# /variant:kotlin-gradle
+
+# variant:java-maven
+[scripts.run.backend-java]
+command = "cd java-maven && ./mvnw -pl service/app -am spring-boot:run"
+
+[scripts.run.test-java]
+command = "cd java-maven && ./mvnw verify"
+# /variant:java-maven
 
 [scripts.run.smoke]
 command = "cd bruno && npx --yes @usebruno/cli run . --env local -r"

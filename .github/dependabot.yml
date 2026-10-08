@@ -9,12 +9,22 @@ multi-ecosystem-groups:
 
 updates:
 
-  # Backend dependencies (Gradle + the Postgres image in the dev stack) grouped into one PR
+  # Backend dependencies and the Postgres image in the dev stack, grouped into one PR
+  # variant:kotlin-gradle
   - package-ecosystem: "gradle"
-    directory: "/"
+    directory: "/kotlin-gradle"
     patterns:
       - "*"
     multi-ecosystem-group: "backend"
+  # /variant:kotlin-gradle
+
+  # variant:java-maven
+  - package-ecosystem: "maven"
+    directory: "/java-maven"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "backend"
+  # /variant:java-maven
 
   - package-ecosystem: "docker-compose"
     directory: "/stack"
