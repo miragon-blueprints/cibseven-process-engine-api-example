@@ -78,4 +78,25 @@ class SelectAlternativeControllerTest {
         }
         confirmVerified(useCase)
     }
+
+    @Test
+    fun `rejects an accepted alternative without a bike id with a 400 problem detail`() {
+
+        // given: a decision body that accepts an alternative but names no bike
+        val pathVar = "123e4567-e89b-12d3-a456-426614174000"
+        val body = mapOf("alternativeFound" to true)
+        val operation =
+            post("/api/bike-leasing/{applicationId}/clarify-alternative", pathVar)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(body))
+
+        // when: the request is performed
+        val response = mockMvc.perform(operation).andReturn()
+
+        // then: the request is refused before the use case is reached
+        assertThat(response.response.status).isEqualTo(400)
+        assertThat(response.response.contentType).contains("application/problem+json")
+        assertThat(response.response.contentAsString).contains("An accepted alternative must name the bike")
+        confirmVerified(useCase)
+    }
 }

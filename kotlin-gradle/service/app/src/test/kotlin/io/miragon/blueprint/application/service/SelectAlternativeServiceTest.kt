@@ -27,13 +27,12 @@ class SelectAlternativeServiceTest {
         SelectAlternativeService(repository = repository, bikePortfolio = bikePortfolio, process = process)
 
     @Test
-    fun `an accepted alternative registers the new bike, points the application at it and completes the task`() {
+    fun `an accepted alternative registers the new bike and hands it to the process`() {
 
         // given: an application whose requested bike was unavailable
         val application = testLeasingApplication()
         every { repository.findById(application.id) } returns application
         every { bikePortfolio.save(any()) } answers { firstArg() }
-        every { repository.save(any()) } answers { firstArg() }
         every { process.completeAlternativeClarification(any(), any(), any()) } just Runs
 
         // when: an alternative bike is selected
@@ -41,10 +40,9 @@ class SelectAlternativeServiceTest {
             SelectAlternativeUseCase.Command(application.id, alternativeFound = true, bikeId = BikeId("BIKE-ALT"), bikeModel = "Aero Road 700"),
         )
 
-        // then: the alternative is registered in the portfolio, the application points at it and the task is completed
+        // then: the alternative is registered in the portfolio and the task is completed with it; the order step stores it
         verify { repository.findById(application.id) }
         verify { bikePortfolio.save(Bike(BikeId("BIKE-ALT"), "Aero Road 700")) }
-        verify { repository.save(match { it.bikeId == BikeId("BIKE-ALT") }) }
         verify { process.completeAlternativeClarification(application.id, true, BikeId("BIKE-ALT")) }
         confirmVerified(repository, bikePortfolio, process)
     }

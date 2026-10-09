@@ -12,6 +12,18 @@
       "id": "Field_alternativeFound"
     },
     {
+      "label": "Alternative bike id",
+      "type": "textfield",
+      "key": "bikeId",
+      "id": "Field_bikeId",
+      "validate": {
+        "required": true
+      },
+      "conditional": {
+        "hide": "=alternativeFound != true"
+      }
+    },
+    {
       "label": "Note",
       "type": "textarea",
       "key": "clarificationNote",

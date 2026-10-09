@@ -755,6 +755,8 @@ object BikeLeasingProcessProcessApi {
       override val next: Next = Next
 
       object Variables : RegisteredVariableDefinitions() {
+        val BIKE_ID: VariableName.Input = input(ProcessVariables.BIKE_ID)
+
         val ORDER_ID: VariableName.Output = output(ProcessVariables.ORDER_ID)
       }
 
@@ -996,6 +998,8 @@ object BikeLeasingProcessProcessApi {
       object Variables : RegisteredVariableDefinitions() {
         val ALTERNATIVE_FOUND: VariableName.Output =
             output(ProcessVariables.ALTERNATIVE_FOUND)
+
+        val BIKE_ID: VariableName.Output = output(ProcessVariables.BIKE_ID)
       }
 
       object Next {

@@ -76,4 +76,25 @@ class SelectAlternativeControllerTest {
                 new SelectAlternativeUseCase.Command(ApplicationId.of(pathVar), false, null, null));
         verifyNoMoreInteractions(useCase);
     }
+
+    @Test
+    void rejects_an_accepted_alternative_without_a_bike_id_with_a_400_problem_detail() throws Exception {
+
+        // given: a decision body that accepts an alternative but names no bike
+        String pathVar = "123e4567-e89b-12d3-a456-426614174000";
+        Map<String, Object> body = Map.of("alternativeFound", true);
+        RequestBuilder operation =
+                post("/api/bike-leasing/{applicationId}/clarify-alternative", pathVar)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(body));
+
+        // when: the request is performed
+        MvcResult response = mockMvc.perform(operation).andReturn();
+
+        // then: the request is refused before the use case is reached
+        assertThat(response.getResponse().getStatus()).isEqualTo(400);
+        assertThat(response.getResponse().getContentType()).contains("application/problem+json");
+        assertThat(response.getResponse().getContentAsString()).contains("An accepted alternative must name the bike");
+        verifyNoMoreInteractions(useCase);
+    }
 }

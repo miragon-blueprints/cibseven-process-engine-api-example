@@ -16,5 +16,9 @@ interface SelectAlternativeUseCase {
         val alternativeFound: Boolean,
         val bikeId: BikeId? = null,
         val bikeModel: String? = null,
-    )
+    ) {
+        init {
+            require(!alternativeFound || bikeId != null) { "An accepted alternative must name the bike" }
+        }
+    }
 }
