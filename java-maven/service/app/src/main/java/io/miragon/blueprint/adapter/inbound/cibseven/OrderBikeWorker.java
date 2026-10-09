@@ -7,6 +7,7 @@ import io.miragon.blueprint.adapter.process.Errors;
 import io.miragon.blueprint.adapter.process.ServiceTasks;
 import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
 import io.miragon.blueprint.application.port.inbound.OrderBikeUseCase;
+import io.miragon.blueprint.domain.bike.BikeId;
 import io.miragon.blueprint.domain.bike.BikeUnavailableException;
 import io.miragon.blueprint.domain.bike.OrderId;
 import io.miragon.blueprint.domain.leasing.ApplicationId;
@@ -29,9 +30,10 @@ public class OrderBikeWorker {
     }
 
     @ProcessEngineWorker(topic = ServiceTasks.ORDER_BIKE)
-    public Map<String, Object> orderBike(@Variable String applicationId) throws BpmnErrorOccurred {
+    public Map<String, Object> orderBike(@Variable String applicationId, @Variable String bikeId)
+            throws BpmnErrorOccurred {
         try {
-            OrderId orderId = useCase.orderBike(ApplicationId.of(applicationId));
+            OrderId orderId = useCase.orderBike(ApplicationId.of(applicationId), new BikeId(bikeId));
             return Map.of(FlowNodes.ServiceTaskOrderBike.Variables.ORDER_ID.getValue(), orderId.value());
         } catch (BikeUnavailableException e) {
             throw new BpmnErrorOccurred(e.getMessage(), Errors.BIKE_UNAVAILABLE.getCode(), Map.of());

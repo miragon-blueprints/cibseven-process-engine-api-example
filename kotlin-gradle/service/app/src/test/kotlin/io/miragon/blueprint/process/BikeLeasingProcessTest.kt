@@ -37,6 +37,7 @@ import io.miragon.bpmn.runtime.path.then
 import io.miragon.bpmn.runtime.path.throwingCompensation
 import io.mockk.every
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.assertj.core.api.Assertions
 import org.cibseven.bpm.engine.HistoryService
 import org.cibseven.bpm.engine.ProcessEngine
@@ -113,7 +114,7 @@ class BikeLeasingProcessTest {
     @BeforeEach
     fun setUp() {
         init(processEngine)
-        every { orderBikeUseCase.orderBike(any()) } returns OrderId("ORDER-1")
+        every { orderBikeUseCase.orderBike(any(), any()) } returns OrderId("ORDER-1")
     }
 
     @Test
@@ -263,10 +264,11 @@ class BikeLeasingProcessTest {
         val id = submitUntilBikeUnavailable()
         val instance = runtimeService.findProcessInstance(id)
 
-        every { orderBikeUseCase.orderBike(any()) } returns OrderId("ORDER-2") // the alternative is in stock
+        every { orderBikeUseCase.orderBike(any(), any()) } returns OrderId("ORDER-2") // the alternative is in stock
         // the alternative is clarified from the outside — the "external" completion of the user task
         process.completeAlternativeClarification(id, alternativeFound = true, bikeId = BikeId("BIKE-ALT"))
         processEngine.continueToNextWaitState() // re-order succeeds -> parallel join -> handover wait state
+        assertThat(instance).variables().containsEntry(FlowNodes.UserTaskClarifyAlternative.Variables.BIKE_ID.value, "BIKE-ALT")
 
         process.correlateHandoverReported(id)
         processEngine.continueToNextWaitState()
@@ -295,7 +297,10 @@ class BikeLeasingProcessTest {
                 FlowNodes.EndEventApplicationRejected.ELEMENT_ID,
             )
 
-        verify(exactly = 2) { orderBikeUseCase.orderBike(id) }
+        verifyOrder {
+            orderBikeUseCase.orderBike(id, BikeId("BIKE-TEST"))
+            orderBikeUseCase.orderBike(id, BikeId("BIKE-ALT"))
+        }
     }
 
     @Test
@@ -355,7 +360,7 @@ class BikeLeasingProcessTest {
         val id = submitUntilBikeUnavailable()
         val instance = runtimeService.findProcessInstance(id)
 
-        every { orderBikeUseCase.orderBike(any()) } returns OrderId("ORDER-2") // the alternative is in stock
+        every { orderBikeUseCase.orderBike(any(), any()) } returns OrderId("ORDER-2") // the alternative is in stock
         process.completeAlternativeClarification(id, alternativeFound = true, bikeId = BikeId("BIKE-ALT"))
         processEngine.continueToNextWaitState() // re-order succeeds -> parallel join -> handover wait state
 
@@ -382,7 +387,7 @@ class BikeLeasingProcessTest {
 
     /** Drives a signed, insured application to the clarify-alternative task: the dealer has no bike. */
     private fun submitUntilBikeUnavailable(): ApplicationId {
-        every { orderBikeUseCase.orderBike(any()) } throws BikeUnavailableException(BikeId("BIKE-TEST"))
+        every { orderBikeUseCase.orderBike(any(), any()) } throws BikeUnavailableException(BikeId("BIKE-TEST"))
 
         val id = submit(age = 35, income = 3500.0)
         processEngine.continueToNextWaitState() // parks on the signature wait state

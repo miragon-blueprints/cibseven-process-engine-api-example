@@ -20,9 +20,10 @@
     </bpmn:startEvent>
     <bpmn:serviceTask id="serviceTask_orderBike" name="Order bike from dealer" camunda:asyncAfter="true" camunda:type="external" camunda:topic="orderBike">
       <bpmn:extensionElements>
-        <!-- Result variable the orderBike worker writes; declared for bpmn-to-code without a
-             self-referential I/O mapping. -->
+        <!-- The bike the orderBike worker orders, and the result variable it writes; declared for
+             bpmn-to-code without a self-referential I/O mapping. -->
         <camunda:properties>
+          <camunda:property name="additionalInputVariables" value="bikeId" />
           <camunda:property name="additionalOutputVariables" value="orderId" />
         </camunda:properties>
       </bpmn:extensionElements>
@@ -113,12 +114,13 @@
       <bpmn:outgoing>flow_joinToHandover</bpmn:outgoing>
     </bpmn:parallelGateway>
     <bpmn:userTask id="userTask_clarifyAlternative" name="Clarify alternative with customer" camunda:asyncAfter="true" camunda:formRef="clarifyAlternativeForm" camunda:formRefBinding="deployment">
-      <bpmn:documentation>Completable two ways: a human via the deployed Camunda Form (Tasklist), or a client via POST /api/bike-leasing/{id}/clarify-alternative. The REST path is the recommended one — it routes through the domain (persisting the chosen alternative bike on the aggregate) before completing the task, so the captured data actually reaches the domain model. See "Clarify return with supplier" in cancel-bike-order.bpmn for the form-only anti-pattern where data never leaves the process.</bpmn:documentation>
+      <bpmn:documentation>Completable two ways: a human via the deployed Camunda Form (Tasklist), or a client via POST /api/bike-leasing/{id}/clarify-alternative. Both paths hand the chosen alternative to the process as the bikeId variable, which the re-order reads and persists on the aggregate, so the captured data reaches the domain model either way. The REST path additionally registers the bike's model in the portfolio. An accepted alternative always names its bike: the form requires the field and the endpoint answers 400 without it. See "Clarify return with supplier" in cancel-bike-order.bpmn for the form-only anti-pattern where data never leaves the process.</bpmn:documentation>
       <bpmn:extensionElements>
-        <!-- The decision the task produces; declared for bpmn-to-code. The Camunda Form
-             (camunda:formRef) still renders it in the Tasklist for the human completion path. -->
+        <!-- The decision the task produces and the alternative bike the re-order picks up; declared
+             for bpmn-to-code. The Camunda Form (camunda:formRef) still renders them in the Tasklist
+             for the human completion path. -->
         <camunda:properties>
-          <camunda:property name="additionalOutputVariables" value="alternativeFound" />
+          <camunda:property name="additionalOutputVariables" value="alternativeFound, bikeId" />
         </camunda:properties>
       </bpmn:extensionElements>
       <bpmn:incoming>flow_bikeUnavailable</bpmn:incoming>

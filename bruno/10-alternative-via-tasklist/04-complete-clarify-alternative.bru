@@ -1,0 +1,30 @@
+meta {
+  name: Complete the clarify-alternative task like the Tasklist form does
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{engineRest}}/task/{{clarifyAlternativeTaskId}}/complete
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "variables": {
+      "alternativeFound": { "value": true, "type": "Boolean" },
+      "bikeId": { "value": "BIKE-900", "type": "String" }
+    }
+  }
+}
+
+assert {
+  res.status: eq 204
+}
+
+docs {
+  The Tasklist path: the deployed Camunda Form submits exactly these variables. The
+  re-order reads bikeId and persists it on the aggregate, so this leads to the same
+  result as the domain endpoint used in 05-bike-unavailable.
+}

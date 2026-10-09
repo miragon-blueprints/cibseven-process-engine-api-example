@@ -1162,6 +1162,8 @@ public final class BikeLeasingProcessProcessApi {
       }
 
       public static final class Variables extends VariableDefinitions {
+        public static final VariableName.Input BIKE_ID = new VariableName.Input(ProcessVariables.BIKE_ID);
+
         public static final VariableName.Output ORDER_ID = new VariableName.Output(ProcessVariables.ORDER_ID);
 
         private Variables() {
@@ -1169,7 +1171,7 @@ public final class BikeLeasingProcessProcessApi {
 
         @Override
         public List<VariableName> getAll() {
-          return List.of(ORDER_ID);
+          return List.of(BIKE_ID, ORDER_ID);
         }
       }
 
@@ -1502,12 +1504,14 @@ public final class BikeLeasingProcessProcessApi {
       public static final class Variables extends VariableDefinitions {
         public static final VariableName.Output ALTERNATIVE_FOUND = new VariableName.Output(ProcessVariables.ALTERNATIVE_FOUND);
 
+        public static final VariableName.Output BIKE_ID = new VariableName.Output(ProcessVariables.BIKE_ID);
+
         private Variables() {
         }
 
         @Override
         public List<VariableName> getAll() {
-          return List.of(ALTERNATIVE_FOUND);
+          return List.of(ALTERNATIVE_FOUND, BIKE_ID);
         }
       }
 

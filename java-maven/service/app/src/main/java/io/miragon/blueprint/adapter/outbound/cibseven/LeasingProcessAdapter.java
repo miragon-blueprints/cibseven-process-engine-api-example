@@ -128,9 +128,8 @@ public class LeasingProcessAdapter implements LeasingProcess {
         String taskId = awaitClarifyAlternativeTaskId(id);
         Map<String, Object> variables = new LinkedHashMap<>();
         variables.put(FlowNodes.UserTaskClarifyAlternative.Variables.ALTERNATIVE_FOUND.getValue(), alternativeFound);
-        // The re-order reads the same start-injected bike variable, so reuse its name.
         if (bikeId != null) {
-            variables.put(FlowNodes.StartEventLeasingRequestReceived.Variables.BIKE_ID.getValue(), bikeId.value());
+            variables.put(FlowNodes.UserTaskClarifyAlternative.Variables.BIKE_ID.getValue(), bikeId.value());
         }
         userTaskCompletionApi.completeTask(new CompleteTaskCmd(taskId, variables)).join();
     }

@@ -21,5 +21,10 @@ public interface SelectAlternativeUseCase {
             boolean alternativeFound,
             BikeId bikeId,
             String bikeModel) {
+        public Command {
+            if (alternativeFound && bikeId == null) {
+                throw new IllegalArgumentException("An accepted alternative must name the bike");
+            }
+        }
     }
 }

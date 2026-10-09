@@ -1,0 +1,26 @@
+meta {
+  name: Find the clarify-alternative task
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{engineRest}}/task?processInstanceBusinessKey={{applicationId}}&taskDefinitionKey=userTask_clarifyAlternative
+  body: none
+  auth: none
+}
+
+script:pre-request {
+  const id = bru.getVar('applicationId');
+  await pollEngine(`/task?processInstanceBusinessKey=${id}&taskDefinitionKey=userTask_clarifyAlternative`,
+    (b) => Array.isArray(b) && b.length >= 1);
+}
+
+assert {
+  res.status: eq 200
+  res.body[0].id: isDefined
+}
+
+vars:post-response {
+  clarifyAlternativeTaskId: res.body[0].id
+}

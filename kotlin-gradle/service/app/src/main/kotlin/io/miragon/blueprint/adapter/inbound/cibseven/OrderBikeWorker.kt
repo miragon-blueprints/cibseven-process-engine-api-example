@@ -7,6 +7,7 @@ import io.miragon.blueprint.adapter.process.Errors
 import io.miragon.blueprint.adapter.process.ServiceTasks
 import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
 import io.miragon.blueprint.application.port.inbound.OrderBikeUseCase
+import io.miragon.blueprint.domain.bike.BikeId
 import io.miragon.blueprint.domain.bike.BikeUnavailableException
 import io.miragon.blueprint.domain.leasing.ApplicationId
 import org.springframework.stereotype.Component
@@ -23,9 +24,9 @@ class OrderBikeWorker(
 ) {
 
     @ProcessEngineWorker(topic = ServiceTasks.ORDER_BIKE)
-    fun orderBike(@Variable applicationId: String): Map<String, Any?> {
+    fun orderBike(@Variable applicationId: String, @Variable bikeId: String): Map<String, Any?> {
         val orderId = try {
-            useCase.orderBike(ApplicationId.of(applicationId))
+            useCase.orderBike(ApplicationId.of(applicationId), BikeId(bikeId))
         } catch (e: BikeUnavailableException) {
             throw BpmnErrorOccurred(e.message.orEmpty(), Errors.BIKE_UNAVAILABLE.code, emptyMap())
         }

@@ -8,6 +8,7 @@ import static org.cibseven.bpm.engine.test.assertions.bpmn.BpmnAwareTests.init;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,6 +48,7 @@ import org.cibseven.bpm.engine.runtime.ProcessInstance;
 import org.cibseven.bpm.engine.task.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -115,7 +117,7 @@ class BikeLeasingProcessTest {
     @BeforeEach
     void setUp() {
         init(processEngine);
-        when(orderBikeUseCase.orderBike(any())).thenReturn(new OrderId("ORDER-1"));
+        when(orderBikeUseCase.orderBike(any(), any())).thenReturn(new OrderId("ORDER-1"));
     }
 
     @Test
@@ -276,10 +278,13 @@ class BikeLeasingProcessTest {
         ApplicationId id = submitUntilBikeUnavailable();
         ProcessInstance instance = findProcessInstance(runtimeService, id);
 
-        doReturn(new OrderId("ORDER-2")).when(orderBikeUseCase).orderBike(any()); // the alternative is in stock
+        doReturn(new OrderId("ORDER-2")).when(orderBikeUseCase).orderBike(any(), any()); // the alternative is in stock
         // the alternative is clarified from the outside — the "external" completion of the user task
         process.completeAlternativeClarification(id, true, new BikeId("BIKE-ALT"));
         continueToNextWaitState(processEngine); // re-order succeeds -> parallel join -> handover wait state
+        assertThat(instance)
+            .variables()
+            .containsEntry(FlowNodes.UserTaskClarifyAlternative.Variables.BIKE_ID.getValue(), "BIKE-ALT");
 
         process.correlateHandoverReported(id);
         continueToNextWaitState(processEngine);
@@ -309,7 +314,9 @@ class BikeLeasingProcessTest {
                 FlowNodes.EndEventContractCancelled.ELEMENT_ID,
                 FlowNodes.EndEventApplicationRejected.ELEMENT_ID);
 
-        verify(orderBikeUseCase, times(2)).orderBike(id);
+        InOrder orders = inOrder(orderBikeUseCase);
+        orders.verify(orderBikeUseCase).orderBike(id, new BikeId("BIKE-TEST"));
+        orders.verify(orderBikeUseCase).orderBike(id, new BikeId("BIKE-ALT"));
     }
 
     @Test
@@ -379,7 +386,7 @@ class BikeLeasingProcessTest {
         ApplicationId id = submitUntilBikeUnavailable();
         ProcessInstance instance = findProcessInstance(runtimeService, id);
 
-        doReturn(new OrderId("ORDER-2")).when(orderBikeUseCase).orderBike(any()); // the alternative is in stock
+        doReturn(new OrderId("ORDER-2")).when(orderBikeUseCase).orderBike(any(), any()); // the alternative is in stock
         process.completeAlternativeClarification(id, true, new BikeId("BIKE-ALT"));
         continueToNextWaitState(processEngine); // re-order succeeds -> parallel join -> handover wait state
 
@@ -406,7 +413,7 @@ class BikeLeasingProcessTest {
 
     /** Drives a signed, insured application to the clarify-alternative task: the dealer has no bike. */
     private ApplicationId submitUntilBikeUnavailable() throws InterruptedException {
-        when(orderBikeUseCase.orderBike(any())).thenThrow(new BikeUnavailableException(new BikeId("BIKE-TEST")));
+        when(orderBikeUseCase.orderBike(any(), any())).thenThrow(new BikeUnavailableException(new BikeId("BIKE-TEST")));
 
         ApplicationId id = submit(35, 3500.0);
         continueToNextWaitState(processEngine); // parks on the signature wait state

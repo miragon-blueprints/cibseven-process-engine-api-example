@@ -4,7 +4,6 @@ import static io.miragon.blueprint.domain.leasing.TestObjectBuilder.testLeasingA
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -33,23 +32,21 @@ class SelectAlternativeServiceTest {
             new SelectAlternativeService(repository, bikePortfolio, process);
 
     @Test
-    void an_accepted_alternative_registers_the_new_bike_points_the_application_at_it_and_completes_the_task() {
+    void an_accepted_alternative_registers_the_new_bike_and_hands_it_to_the_process() {
 
         // given: an application whose requested bike was unavailable
         LeasingApplication application = testLeasingApplication().build();
         when(repository.findById(application.id())).thenReturn(Optional.of(application));
         when(bikePortfolio.save(any())).thenAnswer(inv -> inv.getArgument(0));
-        when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // when: an alternative bike is selected
         underTest.selectAlternative(
                 new SelectAlternativeUseCase.Command(
                         application.id(), true, new BikeId("BIKE-ALT"), "Aero Road 700"));
 
-        // then: the alternative is registered in the portfolio, the application points at it and the task is completed
+        // then: the alternative is registered in the portfolio and the task is completed with it; the order step stores it
         verify(repository).findById(application.id());
         verify(bikePortfolio).save(new Bike(new BikeId("BIKE-ALT"), "Aero Road 700"));
-        verify(repository).save(argThat(a -> a.bikeId().equals(new BikeId("BIKE-ALT"))));
         verify(process).completeAlternativeClarification(application.id(), true, new BikeId("BIKE-ALT"));
         verifyNoMoreInteractions(repository, bikePortfolio, process);
     }
