@@ -1,4 +1,4 @@
-package io.miragon.blueprint.openapi;
+package io.miragon.blueprint.adapter.inbound.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

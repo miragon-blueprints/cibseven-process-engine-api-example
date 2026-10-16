@@ -1,4 +1,4 @@
-package io.miragon.blueprint.architecture
+package io.miragon.blueprint
 
 import io.miragon.common.architecture.ServiceArchitectureTest
 

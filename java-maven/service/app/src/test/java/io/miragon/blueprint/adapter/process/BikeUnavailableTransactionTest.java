@@ -1,7 +1,7 @@
-package io.miragon.blueprint.process;
+package io.miragon.blueprint.adapter.process;
 
-import static io.miragon.blueprint.process.util.JobExecutionUtils.continueToNextWaitState;
-import static io.miragon.blueprint.process.util.ProcessInstanceUtils.findProcessInstance;
+import static io.miragon.blueprint.adapter.process.JobExecutionUtils.continueToNextWaitState;
+import static io.miragon.blueprint.adapter.process.ProcessInstanceUtils.findProcessInstance;
 import static org.cibseven.bpm.engine.test.assertions.bpmn.BpmnAwareTests.assertThat;
 import static org.cibseven.bpm.engine.test.assertions.bpmn.BpmnAwareTests.init;
 

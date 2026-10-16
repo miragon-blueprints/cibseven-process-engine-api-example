@@ -1,4 +1,4 @@
-package io.miragon.blueprint.process.model;
+package io.miragon.blueprint.adapter.process.model;
 
 import io.miragon.bpmn.domain.shared.ProcessEngine;
 import io.miragon.bpmn.domain.validation.ValidationRule;

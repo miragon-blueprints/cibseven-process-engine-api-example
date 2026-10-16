@@ -314,8 +314,8 @@
                         <param>io.miragon.blueprint.adapter.inbound.cibseven.*</param>
                     </excludedClasses>
                     <excludedTestClasses>
-                        <param>io.miragon.blueprint.process.*</param>
-                        <param>io.miragon.blueprint.architecture.*</param>
+                        <param>io.miragon.blueprint.adapter.process.*</param>
+                        <param>io.miragon.blueprint.ArchitectureTest*</param>
                     </excludedTestClasses>
                     <threads>${pitest.threads}</threads>
                     <timeoutFactor>2.0</timeoutFactor>
