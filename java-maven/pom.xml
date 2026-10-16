@@ -10,7 +10,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.0</version>
+        <version>4.1.1</version>
         <relativePath/>
     </parent>
 
@@ -28,13 +28,13 @@
     <properties>
         <java.version>21</java.version>
         <!-- Must equal the parent version above; re-imported first in <dependencyManagement> (see there). -->
-        <spring-boot.version>4.1.0</spring-boot.version>
+        <spring-boot.version>4.1.1</spring-boot.version>
 
         <!-- Overrides the kotlin-bom version the Spring Boot parent manages. The code base is Java, but
              the process-engine-api / worker / adapter and bpmn-to-code libraries are written in Kotlin
              and need kotlin-stdlib (+ kotlin-reflect) at runtime; this keeps them on the 2.4 line instead
              of the older Kotlin version Spring Boot manages. -->
-        <kotlin.version>2.4.0</kotlin.version>
+        <kotlin.version>2.4.20</kotlin.version>
 
         <!-- CIB seven (Camunda 7 fork) — Spring Boot 4 starters -->
         <cib7.version>2.2.0</cib7.version>
@@ -42,11 +42,11 @@
         <!-- process-engine-api (bpm-crafters) — the abstraction layer used to talk to the engine
              (start/correlate/complete via APIs, and @ProcessEngineWorker beans for the service tasks) -->
         <process-engine-api.version>1.7</process-engine-api.version>
-        <process-engine-worker.version>0.8.4</process-engine-worker.version>
-        <process-engine-adapter-cib7.version>2026.07.1</process-engine-adapter-cib7.version>
+        <process-engine-worker.version>0.8.5</process-engine-worker.version>
+        <process-engine-adapter-cib7.version>2026.09.1</process-engine-adapter-cib7.version>
 
         <!-- OpenAPI — 3.x = the Spring Boot 4 line; 3.1.0 is built against SB 4.1.0 -->
-        <springdoc.version>3.1.0</springdoc.version>
+        <springdoc.version>3.1.1</springdoc.version>
 
         <!-- BPMN-to-code (generates the typed process API from the *.bpmn models; testing = model
              validation). The Maven plugin, the runtime and the testing library share one version. -->
@@ -54,28 +54,28 @@
 
         <!-- Architecture tests: ArchUnit for the bytecode rules, Checkstyle for the two source rules
              bytecode cannot express — see docs/adr/0007 -->
-        <archunit.version>1.4.2</archunit.version>
-        <checkstyle.version>10.21.1</checkstyle.version>
+        <archunit.version>1.5.1</archunit.version>
+        <checkstyle.version>14.3.0</checkstyle.version>
         <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
 
         <!-- PostgreSQL JDBC driver, pinned ahead of the version Spring Boot manages (42.7.11 in 4.1.0). Used by the
              explicit <dependencyManagement> entry below, so Dependabot sees and bumps it; drop the pin once Boot
              manages this version or newer. H2 is left to Spring Boot. -->
-        <postgresql.version>42.7.12</postgresql.version>
+        <postgresql.version>42.7.13</postgresql.version>
 
         <!-- JGiven — CIB seven -->
-        <cib7-jgiven.version>2.1.0</cib7-jgiven.version>
+        <cib7-jgiven.version>2.2.0</cib7-jgiven.version>
         <jgiven.version>2.0.3</jgiven.version>
 
         <!-- Highest-version pins for transitive dependencies (see <dependencyManagement>) -->
         <kotlin-logging-jvm.version>8.0.4</kotlin-logging-jvm.version>
-        <swagger-annotations.version>2.2.52</swagger-annotations.version>
+        <swagger-annotations.version>2.2.55</swagger-annotations.version>
         <angus-activation.version>2.0.3</angus-activation.version>
-        <error-prone-annotations.version>2.41.0</error-prone-annotations.version>
+        <error-prone-annotations.version>2.50.0</error-prone-annotations.version>
 
         <!-- Mutation testing (pitest-maven + the JUnit 5 plugin), gate 80 — see docs/adr/0004 -->
-        <pitest.version>1.22.1</pitest.version>
-        <pitest-junit5-plugin.version>1.2.2</pitest-junit5-plugin.version>
+        <pitest.version>1.30.0</pitest.version>
+        <pitest-junit5-plugin.version>1.2.3</pitest-junit5-plugin.version>
     </properties>
 
     <dependencyManagement>
