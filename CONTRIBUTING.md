@@ -43,6 +43,7 @@ cd java-maven && ./mvnw -pl service/app -am spring-boot:run
 |---|---|
 | Postgres | 5432 |
 | Backend (REST + `/engine-rest`) | 8080 |
+| CIB seven webclient (new UI, entry point) | 8080/webapp (admin/admin) |
 | CIB seven Cockpit / webapps | 8080/camunda (admin/admin) |
 | OpenAPI spec · Swagger UI | 8080/v3/api-docs · 8080/swagger-ui.html |
 | Actuator (health · liveness/readiness · prometheus) | 8080/actuator |
@@ -62,7 +63,7 @@ They start a case over the domain REST endpoints, complete user tasks and fire t
 CIB seven `/engine-rest` API, and assert the whole flow — happy path, escalation, abort, DMN
 rejection, the bike-unavailable → alternative-selection loop, and the incident demo.
 
-Confirm <http://localhost:8080/camunda> (admin/admin), <http://localhost:8080/swagger-ui.html> and
+Confirm <http://localhost:8080/webapp>, <http://localhost:8080/camunda> (both admin/admin), <http://localhost:8080/swagger-ui.html> and
 <http://localhost:8080/actuator/health> (status `UP`) all load.
 
 ## Run it in containers

@@ -78,7 +78,10 @@ camunda:
       - classpath*:**/*.dmn
       - classpath*:**/*.form
     webapp:
-      application-path: /camunda
+      # Pins the starter default for the new CIB seven webclient; Cockpit / Tasklist / Admin stay on
+      # /camunda. Never set /camunda here: the classic /camunda/assets/** handler would hide the new
+      # UI's bundles.
+      application-path: /webapp
     database:
       type: postgres
       schema-update: true
@@ -89,6 +92,10 @@ camunda:
 
 cibseven:
   webclient:
+    # The webclient backend calls /engine-rest over HTTP. This file shadows the webclient jar's own
+    # application.yaml (and its localhost:8080 default), so point it at this app's own port.
+    engineRest:
+      url: http://localhost:${server.port}
     authentication:
       # WARNING: This is a development/example secret key.
       # DO NOT use this in production! Generate your own secure secret key.
