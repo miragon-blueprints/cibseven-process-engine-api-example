@@ -1,4 +1,4 @@
-package io.miragon.blueprint.process.util;
+package io.miragon.blueprint.adapter.process;
 
 import java.util.List;
 import org.cibseven.bpm.engine.ManagementService;

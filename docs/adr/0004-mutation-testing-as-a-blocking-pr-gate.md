@@ -28,7 +28,7 @@ We run **PIT (pitest)** as a **blocking gate** with `mutationThreshold = 80`, co
   `BikeCatalogueSeeder`, and the `adapter.inbound.cibseven.*` workers (thin glue exercised only by the
   slow engine tests).
 - The **kill-set** is the fast mockk / `@WebMvcTest` / `@DataJpaTest` unit tests; the JGiven engine
-  integration tests (`process.*`) and the ArchUnit/Konsist tests (`architecture.*`) are excluded from
+  integration tests (`adapter.process.*`) and the ArchUnit/Konsist tests (`ArchitectureTest`) are excluded from
   the kill-set — they'd make every run slow and non-deterministic without adding mutation signal.
 
 **Why 80 and not 100:** PIT mutates JVM bytecode, and Kotlin emits synthetic constructs (`value class`

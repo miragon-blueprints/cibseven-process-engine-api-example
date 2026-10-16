@@ -1,4 +1,4 @@
-package io.miragon.blueprint.process.util;
+package io.miragon.blueprint.adapter.process;
 
 import static io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.PROCESS_ID;
 import static org.assertj.core.api.Assertions.assertThat;

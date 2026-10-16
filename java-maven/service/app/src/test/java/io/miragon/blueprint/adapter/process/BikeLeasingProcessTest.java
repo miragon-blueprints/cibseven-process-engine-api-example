@@ -1,8 +1,8 @@
-package io.miragon.blueprint.process;
+package io.miragon.blueprint.adapter.process;
 
-import static io.miragon.blueprint.process.util.JobExecutionUtils.continueToNextWaitState;
-import static io.miragon.blueprint.process.util.ProcessInstanceUtils.findProcessInstance;
-import static io.miragon.blueprint.process.util.TimerUtils.fireTimer;
+import static io.miragon.blueprint.adapter.process.JobExecutionUtils.continueToNextWaitState;
+import static io.miragon.blueprint.adapter.process.ProcessInstanceUtils.findProcessInstance;
+import static io.miragon.blueprint.adapter.process.TimerUtils.fireTimer;
 import static org.cibseven.bpm.engine.test.assertions.bpmn.BpmnAwareTests.assertThat;
 import static org.cibseven.bpm.engine.test.assertions.bpmn.BpmnAwareTests.init;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,7 +15,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes;
-import io.miragon.blueprint.adapter.process.CancelBikeOrderProcessApi;
 import io.miragon.blueprint.application.port.inbound.ActivateLeasingUseCase;
 import io.miragon.blueprint.application.port.inbound.BookCancellationCostsUseCase;
 import io.miragon.blueprint.application.port.inbound.CancelContractUseCase;
@@ -58,7 +57,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * Drives the deployed model end-to-end. Unlike the classic-delegate blueprint, the service tasks are
  * external tasks completed by the real, asynchronously polling {@code @ProcessEngineWorker} beans (which
  * call the mocked use cases). Each step therefore drives the process with
- * {@link io.miragon.blueprint.process.util.JobExecutionUtils#continueToNextWaitState(ProcessEngine)},
+ * {@link io.miragon.blueprint.adapter.process.JobExecutionUtils#continueToNextWaitState(ProcessEngine)},
  * which fires async continuations <em>and</em> waits for the workers to drain the open external tasks, then
  * correlates messages / fires timers / completes the user task through the {@link LeasingProcess} port.
  */

@@ -1,4 +1,4 @@
-package io.miragon.blueprint.process.util
+package io.miragon.blueprint.adapter.process
 
 import io.miragon.bpmn.runtime.path.ProcessPath
 import org.cibseven.bpm.engine.test.assertions.bpmn.ProcessInstanceAssert

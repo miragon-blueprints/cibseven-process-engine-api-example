@@ -1,8 +1,7 @@
-package io.miragon.blueprint.process
+package io.miragon.blueprint.adapter.process
 
 import com.ninjasquad.springmockk.MockkBean
 import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
-import io.miragon.blueprint.adapter.process.CancelBikeOrderProcessApi
 import io.miragon.blueprint.application.port.inbound.ActivateLeasingUseCase
 import io.miragon.blueprint.application.port.inbound.BookCancellationCostsUseCase
 import io.miragon.blueprint.application.port.inbound.CancelContractUseCase
@@ -23,11 +22,6 @@ import io.miragon.blueprint.domain.leasing.Email
 import io.miragon.blueprint.domain.leasing.LeasingApplication
 import io.miragon.blueprint.domain.leasing.LeasingStatus
 import io.miragon.blueprint.domain.bike.OrderId
-import io.miragon.blueprint.process.util.continueToNextWaitState
-import io.miragon.blueprint.process.util.findProcessInstance
-import io.miragon.blueprint.process.util.fireTimer
-import io.miragon.blueprint.process.util.hasPassed
-import io.miragon.blueprint.process.util.hasPassedInOrder
 import io.miragon.bpmn.runtime.path.ProcessPath
 import io.miragon.bpmn.runtime.path.enter
 import io.miragon.bpmn.runtime.path.inside

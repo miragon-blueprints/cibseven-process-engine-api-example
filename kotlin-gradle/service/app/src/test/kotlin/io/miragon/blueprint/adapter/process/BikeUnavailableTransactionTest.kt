@@ -1,4 +1,4 @@
-package io.miragon.blueprint.process
+package io.miragon.blueprint.adapter.process
 
 import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.FlowNodes
 import io.miragon.blueprint.application.port.outbound.LeasingApplicationRepository
@@ -9,8 +9,6 @@ import io.miragon.blueprint.domain.leasing.CustomerName
 import io.miragon.blueprint.domain.leasing.Email
 import io.miragon.blueprint.domain.leasing.LeasingApplication
 import io.miragon.blueprint.domain.leasing.LeasingStatus
-import io.miragon.blueprint.process.util.continueToNextWaitState
-import io.miragon.blueprint.process.util.findProcessInstance
 import org.assertj.core.api.Assertions
 import org.cibseven.bpm.engine.ProcessEngine
 import org.cibseven.bpm.engine.RuntimeService

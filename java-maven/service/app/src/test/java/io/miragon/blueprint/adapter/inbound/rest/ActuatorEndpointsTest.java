@@ -1,4 +1,4 @@
-package io.miragon.blueprint.actuator;
+package io.miragon.blueprint.adapter.inbound.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,7 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
  * Smoke-tests the operational surface added for issue #10: the actuator probes and the Prometheus
  * scrape endpoint must respond so orchestrators (liveness/readiness) and monitoring can rely on them.
  *
- * <p>Boots a full servlet context the same way {@link io.miragon.blueprint.openapi.OpenApiSpecExportTest}
+ * <p>Boots a full servlet context the same way {@link io.miragon.blueprint.adapter.inbound.rest.OpenApiSpecExportTest}
  * does — the {@code test} profile is {@code web-application-type=none}, so we override it to {@code servlet}
  * and let the H2 datasource back the built-in {@code db} health indicator (which reports {@code UP}).
  */

@@ -1,4 +1,4 @@
-package io.miragon.blueprint.process.util
+package io.miragon.blueprint.adapter.process
 
 import io.miragon.blueprint.adapter.process.BikeLeasingProcessProcessApi.PROCESS_ID
 import io.miragon.blueprint.domain.leasing.ApplicationId
