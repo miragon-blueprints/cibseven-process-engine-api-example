@@ -4,8 +4,6 @@
 package io.miragon.blueprint.adapter.process
 
 import io.miragon.bpmn.runtime.BpmnErrorDefinition
-import kotlin.Suppress
-import kotlin.collections.List
 
 /**
  * BPMN error definitions with name and code, as thrown and caught by the processes.

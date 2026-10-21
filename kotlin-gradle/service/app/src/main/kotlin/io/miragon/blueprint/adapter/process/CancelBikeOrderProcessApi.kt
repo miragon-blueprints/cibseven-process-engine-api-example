@@ -17,9 +17,6 @@ import io.miragon.bpmn.runtime.ProcessId
 import io.miragon.bpmn.runtime.RegisteredVariableDefinitions
 import io.miragon.bpmn.runtime.SequenceFlows
 import io.miragon.bpmn.runtime.VariableName
-import kotlin.String
-import kotlin.Suppress
-import kotlin.collections.List
 
 object CancelBikeOrderProcessApi {
   val PROCESS_ID: ProcessId = ProcessId("cancelBikeOrder")
@@ -72,7 +69,7 @@ object CancelBikeOrderProcessApi {
           get() = SequenceFlows.single(
             flowId = ElementId("flow_cancellationNotPossible"),
             name = "No",
-            conditionExpression = $$"""${cancellationPossible}""",
+            conditionExpression = "\${cancellationPossible}",
             target = UserTaskClarifyReturn,
           )
       }
@@ -129,8 +126,7 @@ object CancelBikeOrderProcessApi {
       override val next: Next = Next
 
       object Variables : RegisteredVariableDefinitions() {
-        val CANCELLATION_POSSIBLE: VariableName.Output =
-            output(ProcessVariables.CANCELLATION_POSSIBLE)
+        val CANCELLATION_POSSIBLE: VariableName.Output = output(ProcessVariables.CANCELLATION_POSSIBLE)
       }
 
       object Next {

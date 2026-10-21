@@ -50,7 +50,7 @@
 
         <!-- BPMN-to-code (generates the typed process API from the *.bpmn models; testing = model
              validation). The Maven plugin, the runtime and the testing library share one version. -->
-        <bpmn-to-code.version>6.2.0</bpmn-to-code.version>
+        <bpmn-to-code.version>6.6.1</bpmn-to-code.version>
 
         <!-- Architecture tests: ArchUnit for the bytecode rules, Checkstyle for the two source rules
              bytecode cannot express — see docs/adr/0007 -->
